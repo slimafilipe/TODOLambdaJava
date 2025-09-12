@@ -2,8 +2,8 @@ name: Lambda Java CI - Build & test
 on:
   push:
     branches: ["dev", "feature/hello-world"]
-    pull_request:
-      branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
