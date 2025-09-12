@@ -34,6 +34,7 @@ Para rodar os testes, rode o seguinte comando
 ```
 
 ## Funcionalidades futuras
+No momento é somente um API simples com um Hello World, mas planejo adicionar as seguintes funcionalidades:
 - [ ] Criar funcionalidedades CRUD completas para uma lista de tarefas
 - [ ] Persistência usando DynamoDB
 - [ ] Implementar autenticação e autorização
