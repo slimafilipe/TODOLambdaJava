@@ -18,7 +18,7 @@ jobs:
       - name: Build and test with Maven
         run: mvn clean install
       - name: Upload artifact
-        uses: actions-upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: lambda-jar
           path: target/*.jar
