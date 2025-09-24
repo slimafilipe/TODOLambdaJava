@@ -32,3 +32,7 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+variable "table_name" {
+  description = "Nome da tabela DynamoDB que a Lambda irá acessar"
+  type        = string
+}
