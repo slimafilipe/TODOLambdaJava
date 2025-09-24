@@ -41,4 +41,10 @@ resource "aws_lambda_function" "this" {
 
   tags = var.tags
 
+  environment {
+    variables = {
+      TASKS_TABLE_NAME = var.table_name
+    }
+  }
+
 }
