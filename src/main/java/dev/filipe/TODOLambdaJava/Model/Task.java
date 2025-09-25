@@ -2,6 +2,7 @@ package dev.filipe.TODOLambdaJava.Model;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
 @DynamoDbBean
 public class Task {
@@ -31,16 +32,15 @@ public class Task {
         return userId;
     }
 
-    public void setUserId(String id) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
-
-    @DynamoDbPartitionKey
+    @DynamoDbSortKey
     public String getTaskId() {
         return taskId;
     }
 
-    public void setTaskId(String id) {
+    public void setTaskId(String taskId) {
         this.taskId = taskId;
     }
 

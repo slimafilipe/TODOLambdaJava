@@ -44,23 +44,26 @@ resource "aws_iam_policy" "lambda_dynamodb_policy" {
 
 # ----- Módulo Lambda ------
 
-module "minha_lambda_hello_world" {
-  source = "../tf_modules/lambda"
 
-  function_name     = "hello-world-lambda-java"
-  handler           = "dev.filipe.TODOLambdaJava.Handler::handleRequest"
-  runtime           = "java21"
-  source_code_path  = "../target/TODOLambdaJava-1.0-SNAPSHOT.jar"
-  memory_size       = 1024
-  timeout           = 60
-  tags = {
-    Project = "TODOLambdaJava"
-   ManagedBy   = "Terraform"
-  }
+
+module "CreateTaskLambda" {
+    source = "../tf_modules/lambda"
+
+    function_name     = "create-task-lambda-java"
+    handler           = "dev.filipe.TODOLambdaJava.Controller.CreateTaskHandler::handleRequest"
+    runtime           = "java21"
+    source_code_path  = "../target/TODOLambdaJava-1.0-SNAPSHOT.jar"
+    memory_size       = 1024
+    timeout           = 60
+    tasks_table_name = module.todo_table.table_name
+    tags = {
+      Project   = "TODOLambdaJava"
+      ManagedBy = "Terraform"
+    }
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_dynamodb_access" {
-  role = module.minha_lambda_hello_world.iam_role_name
+  role = module.CreateTaskLambda.iam_role_name
   policy_arn = aws_iam_policy.lambda_dynamodb_policy.arn
 }
 
@@ -69,6 +72,6 @@ output "nome_da_tabela" {
 }
 output "arn_da_lambda" {
   description = "O ARN da função Lambda criada pelo módulo"
-  value = module.minha_lambda_hello_world.lambda_function_arn
+  value = module.CreateTaskLambda.lambda_function_arn
 }
 

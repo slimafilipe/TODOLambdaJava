@@ -43,7 +43,8 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             }
             Task task = gson.fromJson(requestBody, Task.class);
 
-            task.setUserId(UUID.randomUUID().toString());
+
+            task.setUserId("user-id-123");
             task.setTaskId(UUID.randomUUID().toString());
             task.setCreatedAt(Instant.now().toString());
             task.setCompleted(false);

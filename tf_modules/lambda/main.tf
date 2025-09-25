@@ -43,7 +43,7 @@ resource "aws_lambda_function" "this" {
 
   environment {
     variables = {
-      TASKS_TABLE_NAME = var.table_name
+      TASKS_TABLE = var.tasks_table_name
     }
   }
 
