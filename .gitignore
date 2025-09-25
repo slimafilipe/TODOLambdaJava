@@ -40,6 +40,6 @@ build/
 ### IntelliJ ###
 .idea
 
-/tf_modules/.terraform/
+.terraform/
 *.tfstate
 *.tfstate.backup
