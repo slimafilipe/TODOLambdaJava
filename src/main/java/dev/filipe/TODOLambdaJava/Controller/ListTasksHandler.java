@@ -8,6 +8,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
+import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -46,13 +47,9 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
         logger.log("Recebida requisão para listar tarefas: " + apiGatewayProxyRequestEvent.getBody());
         try {
             String userId = "user-id-123";
-            List<Task> tasks = listTasks(userId);
-            String responseBody = gson.toJson(tasks);
+            List<Task> tasks = TaskRepository.listTasks(userId);
 
-            return new APIGatewayProxyResponseEvent()
-                    .withStatusCode(200)
-                    .withBody(responseBody)
-                    .withHeaders(Collections.singletonMap("Content-Type", "application/json"));
+            return ApiResponseBuilder.createSucessResponse(200, gson.toJson(tasks));
         } catch (JsonSyntaxException e){
             logger.log("Erro ao construir resposta JSON: " + e.getMessage());
             return ApiResponseBuilder.createErrorResponse(400, "Requisição inválida");
@@ -63,14 +60,4 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
         }
 
     }
-
-
-    private List<Task> listTasks(String userId) {
-        QueryConditional conditional =  QueryConditional.keyEqualTo(Key.builder().partitionValue(userId).build());
-
-        return taskTable.query(conditional).items().stream().toList();
-    }
-
-
-
 }
