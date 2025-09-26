@@ -64,7 +64,7 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
 
           //  String responseBody = gson.toJson(task);
 
-            return ApiResponseBuilder.createSucessResponse(201, gson.toJson(task));
+            return ApiResponseBuilder.createSuccessResponse(201, gson.toJson(task));
         } catch (JsonSyntaxException e) {
             logger.log("Erro ao processar JSON: " + e.getMessage());
             return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição inválido");
