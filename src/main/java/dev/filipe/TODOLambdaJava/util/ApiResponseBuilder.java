@@ -9,15 +9,15 @@ import java.util.Map;
 public class ApiResponseBuilder {
     private static final Gson gson = new Gson();
 
-    public ApiResponseBuilder(){
+    private ApiResponseBuilder(){
 
     }
 
-    public static APIGatewayProxyResponseEvent createSucessResponse(int statusCode, String body) {
+    public static APIGatewayProxyResponseEvent createSuccessResponse(int statusCode, Object body) {
         return new APIGatewayProxyResponseEvent()
                 .withStatusCode(statusCode)
-                .withBody(gson.toJson(body))
-                .withHeaders(Collections.singletonMap("Content-Type", "application/json"));
+                .withHeaders(Collections.singletonMap("Content-Type", "application/json"))
+                .withBody(gson.toJson(body));
     }
 
 
