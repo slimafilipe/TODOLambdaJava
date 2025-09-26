@@ -1,5 +1,6 @@
 package dev.filipe.TODOLambdaJava.Controller;
 
+import com.google.gson.JsonSyntaxException;
 import dev.filipe.TODOLambdaJava.Model.Task;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -52,9 +53,13 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
                     .withStatusCode(200)
                     .withBody(responseBody)
                     .withHeaders(Collections.singletonMap("Content-Type", "application/json"));
-        } catch (Exception e) {
+        } catch (JsonSyntaxException e){
+            logger.log("Erro ao construir resposta JSON: " + e.getMessage());
+            return ApiResponseBuilder.createErrorResponse(400, "Requisição inválida");
+        }
+        catch (Exception e) {
             logger.log("Erro ao listar tarefas: " + e.getMessage());
-            return ApiResponseBuilder.createErrorResponse(500, "Erro ao listar tarefas");
+            return ApiResponseBuilder.createErrorResponse(500, "Erro interno do servidor");
         }
 
     }
