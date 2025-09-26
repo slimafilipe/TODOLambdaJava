@@ -54,8 +54,6 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
                 return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição está vazio");
             }
             Task task = gson.fromJson(requestBody, Task.class);
-
-
             task.setUserId("user-id-123");
             task.setTaskId(UUID.randomUUID().toString());
             task.setCreatedAt(Instant.now().toString());
@@ -64,12 +62,9 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             taskTable.putItem(task);
             logger.log("Tarefa criada com sucesso com ID: " + task.getTaskId());
 
-            String responseBody = gson.toJson(task);
+          //  String responseBody = gson.toJson(task);
 
-            return new APIGatewayProxyResponseEvent()
-                    .withStatusCode(201)
-                    .withBody(responseBody)
-                    .withHeaders(Collections.singletonMap("Content-Type", "application/json"));
+            return ApiResponseBuilder.createSucessResponse(201, gson.toJson(task));
         } catch (JsonSyntaxException e) {
             logger.log("Erro ao processar JSON: " + e.getMessage());
             return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição inválido");
