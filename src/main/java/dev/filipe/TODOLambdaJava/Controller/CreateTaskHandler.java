@@ -23,13 +23,24 @@ import java.util.UUID;
 
 
 public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
-    private static final DynamoDbClient dynamoDbClient = DynamoDbClient.builder().build();
-    private static final DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
 
-    private static final Gson gson = new Gson();
+    private final Gson gson;
 
-    private static final String TABLE_NAME = System.getenv("TASKS_TABLE");
-    private static final DynamoDbTable<Task> taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
+    private final DynamoDbTable<Task> taskTable ;
+
+    public CreateTaskHandler(){
+        DynamoDbClient dynamoDbClient = DynamoDbClient.builder().build();
+        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
+        String TABLE_NAME = System.getenv("TASKS_TABLE");
+        this.taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
+        this.gson = new Gson();
+    }
+
+    // Construtor para injeção de dependência em testes
+    public CreateTaskHandler(DynamoDbTable<Task> taskTable, Gson gson) {
+        this.taskTable = taskTable;
+        this.gson = gson;
+    }
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
