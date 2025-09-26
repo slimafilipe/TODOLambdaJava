@@ -22,21 +22,21 @@ import java.util.List;
 
 public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Gson gson;
-
-    private final DynamoDbTable<Task> taskTable ;
+    private final Gson gson = new Gson();
+    private final TaskRepository taskRepository;
 
     public ListTasksHandler() {
         DynamoDbClient dynamoDbClient = DynamoDbClient.builder().build();
         DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
         String TABLE_NAME = System.getenv("TASKS_TABLE");
-        this.taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
-        this.gson = new Gson();
+        DynamoDbTable<Task> taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
+
+        this.taskRepository = new TaskRepository(taskTable);
     }
+
     // Construtor para injeção de dependência em testes
-    public ListTasksHandler(DynamoDbTable<Task> taskTable, Gson gson) {
-        this.taskTable = taskTable;
-        this.gson = gson;
+    public ListTasksHandler(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
     }
 
 
@@ -47,9 +47,9 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
         logger.log("Recebida requisão para listar tarefas: " + apiGatewayProxyRequestEvent.getBody());
         try {
             String userId = "user-id-123";
-            List<Task> tasks = TaskRepository.listTasks(userId);
+            List<Task> tasks = taskRepository.listTasks(userId);
 
-            return ApiResponseBuilder.createSucessResponse(200, gson.toJson(tasks));
+            return ApiResponseBuilder.createSuccessResponse(200, tasks);
         } catch (JsonSyntaxException e){
             logger.log("Erro ao construir resposta JSON: " + e.getMessage());
             return ApiResponseBuilder.createErrorResponse(400, "Requisição inválida");
