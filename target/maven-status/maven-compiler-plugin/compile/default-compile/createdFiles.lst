@@ -1,3 +1,7 @@
-dev\filipe\TODOLambdaJava\Controller\CreateTaskHandler.class
 dev\filipe\TODOLambdaJava\Model\Task.class
+dev\filipe\TODOLambdaJava\Controller\UpdateTaskHandler.class
+dev\filipe\TODOLambdaJava\Controller\ListTasksHandler.class
+dev\filipe\TODOLambdaJava\repository\TaskRepository.class
+dev\filipe\TODOLambdaJava\util\ApiResponseBuilder.class
+dev\filipe\TODOLambdaJava\Controller\CreateTaskHandler.class
 dev\filipe\TODOLambdaJava\Handler.class

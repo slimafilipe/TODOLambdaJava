@@ -10,6 +10,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
@@ -50,11 +51,9 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             String requestBody = input.getBody();
             if (requestBody == null || requestBody.isEmpty()) {
                 logger.log("Corpo da requisição está vazio");
-                return createErrorResponse(400, "Corpo da requisição está vazio");
+                return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição está vazio");
             }
             Task task = gson.fromJson(requestBody, Task.class);
-
-
             task.setUserId("user-id-123");
             task.setTaskId(UUID.randomUUID().toString());
             task.setCreatedAt(Instant.now().toString());
@@ -63,26 +62,15 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             taskTable.putItem(task);
             logger.log("Tarefa criada com sucesso com ID: " + task.getTaskId());
 
-            String responseBody = gson.toJson(task);
+          //  String responseBody = gson.toJson(task);
 
-            return new APIGatewayProxyResponseEvent()
-                    .withStatusCode(201)
-                    .withBody(responseBody)
-                    .withHeaders(Collections.singletonMap("Content-Type", "application/json"));
+            return ApiResponseBuilder.createSuccessResponse(201, gson.toJson(task));
         } catch (JsonSyntaxException e) {
             logger.log("Erro ao processar JSON: " + e.getMessage());
-            return createErrorResponse(400, "Corpo da requisição inválido");
+            return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição inválido");
         } catch (Exception e) {
             logger.log("Erro ao criar tarefa: " + e.getMessage());
-            return createErrorResponse(500, "Erro interno do servidor");
+            return ApiResponseBuilder.createErrorResponse(500, "Erro interno do servidor");
         }
-    }
-
-    private APIGatewayProxyResponseEvent createErrorResponse(int statusCode, String body) {
-        String errorPayload = gson.toJson(Collections.singletonMap("error", body));
-        return new APIGatewayProxyResponseEvent()
-                .withStatusCode(statusCode)
-                .withBody(errorPayload)
-                .withHeaders(Collections.singletonMap("Content-Type", "application/json"));
     }
 }
