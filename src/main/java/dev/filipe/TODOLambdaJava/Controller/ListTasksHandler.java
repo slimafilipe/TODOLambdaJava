@@ -12,12 +12,9 @@ import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-import java.util.Collections;
 import java.util.List;
 
 public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
