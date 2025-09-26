@@ -36,3 +36,10 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### IntelliJ ###
+.idea
+
+.terraform/
+*.tfstate
+*.tfstate.backup
