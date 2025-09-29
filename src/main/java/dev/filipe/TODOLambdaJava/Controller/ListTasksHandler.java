@@ -38,10 +38,10 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
 
 
     @Override
-    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
 
         var logger = context.getLogger();
-        logger.log("Recebida requisão para listar tarefas: " + apiGatewayProxyRequestEvent.getBody());
+        logger.log("Recebida requisão para listar tarefas: " + input.getBody());
         try {
             String userId = "user-id-123";
             List<Task> tasks = taskRepository.listTasks(userId);
