@@ -11,18 +11,17 @@ import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,11 +42,11 @@ public class UpdateTaskHandlerTest {
 
     private UpdateTaskHandler updateTaskHandler;
 
-    private Gson gson = new Gson();
+    private final Gson gson = new Gson();
 
     @BeforeEach
     void setUp(){
-        updateTaskHandler = new UpdateTaskHandler(tasktTable, gson, taskRepository);
+        updateTaskHandler = new UpdateTaskHandler(taskRepository);
 
         when(context.getLogger()).thenReturn(logger);
     }
@@ -55,27 +54,41 @@ public class UpdateTaskHandlerTest {
     @Test
     void testUpdateHandler(){
 
-        APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
-
         String userId = "user-id-123";
+        String taskId = "task-id-123";
 
-        Task task = new Task();
-        task.setTaskId("task-id-456");
-        task.setTitle("Task test");
-        task.setDescription("Este é um teste");
+        Task existingTask = new Task();
+        existingTask.setUserId(userId);
+        existingTask.setTaskId(taskId);
+        existingTask.setTitle("Task já existente");
+        existingTask.setDescription("Este é um teste");
+        existingTask.setCompleted(false);
 
-        String taskIdGet = task.getTaskId();
-        request.setBody(gson.toJson(task));
+        Task updateTask = new Task();
+        updateTask.setTitle("Titulo novo");
+        updateTask.setDescription("Novo corpo da tarefa");
+        updateTask.setCompleted(true);
 
-        Optional<Task> findTaskById = Optional.of(task);
-        when(taskRepository.findTaskById(userId, taskIdGet)).thenReturn(findTaskById);
+        when(taskRepository.findTaskById(anyString(), anyString())).thenReturn(Optional.empty());
+        when(taskRepository.findTaskById(userId, taskId)).thenReturn(Optional.of(existingTask));
+
+        APIGatewayProxyRequestEvent request= new APIGatewayProxyRequestEvent();
+        request.setPathParameters(Map.of("taskId", taskId));
+        request.setBody(gson.toJson(updateTask));
 
         APIGatewayProxyResponseEvent response = updateTaskHandler.handleRequest(request, context);
         assertEquals(200, response.getStatusCode());
-        assertEquals(gson.toJson(findTaskById), response.getBody());
 
-        verify(tasktTable).putItem(any(Task.class));
-        verify(taskRepository).findTaskById(userId, taskIdGet);
+        ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
+        verify(taskRepository).save(taskCaptor.capture());
+        Task savedTask = taskCaptor.getValue();
+
+        assertEquals("Titulo novo", savedTask.getTitle());
+        assertEquals("Novo corpo da tarefa", savedTask.getDescription());
+        assertTrue(savedTask.isCompleted());
+
+        assertEquals(userId, savedTask.getUserId());
+        assertEquals(taskId, savedTask.getTaskId());
     }
 
 }
