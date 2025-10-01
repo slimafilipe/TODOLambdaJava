@@ -19,23 +19,20 @@ import java.util.Optional;
 
 public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Gson gson;
+    private final Gson gson = new Gson();
     private final TaskRepository taskRepository;
-    private final DynamoDbTable<Task> taskTable;
+
 
     public UpdateTaskHandler(){
         DynamoDbClient dynamoDbClient = DynamoDbClient.builder().build();
         DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
         String TABLE_NAME = System.getenv("TASKS_TABLE");
-        this.taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
-        this.gson = new Gson();
+        DynamoDbTable<Task> taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
         this.taskRepository = new TaskRepository(taskTable);
     }
 
-    public UpdateTaskHandler( DynamoDbTable<Task> taskTable, Gson gson, TaskRepository taskRepository) {
+    public UpdateTaskHandler(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
-        this.gson = new Gson();
-        this.taskTable =  taskTable;
     }
 
 
@@ -46,9 +43,9 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
         try{
             Map<String, String> pathParameters = input.getPathParameters();
             if (pathParameters == null || !pathParameters.containsKey("taskId")){
-                ApiResponseBuilder.createErrorResponse(400, "taskId obrigatório");
+              return  ApiResponseBuilder.createErrorResponse(400, "taskId obrigatório");
             }
-            String userId = "user-id-23";
+            String userId = "user-id-123";
             String taskId = input.getPathParameters().get("taskId");
 
             Optional<Task> existingTaskOptional = taskRepository.findTaskById(userId, taskId);
