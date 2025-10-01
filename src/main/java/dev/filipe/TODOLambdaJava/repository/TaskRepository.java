@@ -33,4 +33,8 @@ public class TaskRepository {
     public void save(Task task){
         taskTable.putItem(task);
     }
+
+    public void delete(Task task){
+        taskTable.deleteItem(task);
+    }
 }
