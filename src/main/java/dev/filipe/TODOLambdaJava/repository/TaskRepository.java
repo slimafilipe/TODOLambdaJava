@@ -1,12 +1,12 @@
 package dev.filipe.TODOLambdaJava.repository;
 
-import com.google.gson.Gson;
 import dev.filipe.TODOLambdaJava.Model.Task;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class TaskRepository {
@@ -22,12 +22,15 @@ public class TaskRepository {
         return taskTable.query(conditional).items().stream().collect(Collectors.toList());
     }
 
-    public List<Task> findTaskById(String userId, String taskId) {
-        Key key = software.amazon.awssdk.enhanced.dynamodb.Key.builder()
+    public Optional<Task> findTaskById(String userId, String taskId) {
+        Key key = Key.builder()
                 .partitionValue(userId)
                 .sortValue(taskId)
                 .build();
-        Task task = taskTable.getItem(key);
-        return List.of(task);
+        return Optional.ofNullable(taskTable.getItem(key));
+    }
+
+    public void save(Task task){
+        taskTable.putItem(task);
     }
 }
