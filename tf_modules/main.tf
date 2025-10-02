@@ -125,6 +125,100 @@ module "DeleteTaskLambda" {
   }
 }
 
+resource "aws_api_gateway_rest_api" "task_api" {
+  name = "TasksAPi"
+}
+resource "aws_api_gateway_resource" "task_resource" {
+  parent_id   = aws_api_gateway_rest_api.task_api.root_resource_id
+  path_part   = "tasks"
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_resource" "user_id_resource" {
+  parent_id   = aws_api_gateway_resource.task_resource.id
+  path_part   = "{userId}"
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_resource" "task_id_resource" {
+  parent_id   = aws_api_gateway_resource.task_resource.id
+  path_part   = "{taskId}"
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_method" "post_task_method" {
+  authorization = "NONE"
+  http_method   = "POST"
+  resource_id   = aws_api_gateway_resource.task_resource.id
+  rest_api_id   = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_integration" "post_task_integration" {
+  http_method = aws_api_gateway_method.post_task_method.http_method
+  resource_id = aws_api_gateway_resource.task_resource.id
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+  type        = "AWS_PROXY"
+  uri         = module.CreateTaskLambda.lambda_function_invoke_arn
+}
+
+resource "aws_api_gateway_method" "get_tasks_method" {
+  authorization = "NONE"
+  http_method   = "GET"
+  resource_id   = aws_api_gateway_resource.user_id_resource.id
+  rest_api_id   = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_integration" "get_task_integration" {
+  http_method = aws_api_gateway_method.get_tasks_method.http_method
+  resource_id = aws_api_gateway_resource.user_id_resource.id
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+  type        = "AWS_PROXY"
+  uri         = module.ListTasksLambda.lambda_function_invoke_arn
+}
+
+resource "aws_api_gateway_method" "update_task_method" {
+  authorization = "NONE"
+  http_method   = "PUT"
+  resource_id   = aws_api_gateway_resource.task_id_resource.id
+  rest_api_id   = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_integration" "update_task_integration" {
+  http_method = aws_api_gateway_method.update_task_method.http_method
+  resource_id = aws_api_gateway_resource.task_id_resource.id
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+  type        = "AWS_PROXY"
+  uri         = module.UpdateTaskLambda.lambda_function_invoke_arn
+}
+resource "aws_api_gateway_method" "delete_task_method" {
+  authorization = "NONE"
+  http_method   = "DELETE"
+  resource_id   = aws_api_gateway_resource.task_id_resource.id
+  rest_api_id   = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_integration" "delete_task_integration" {
+  http_method = aws_api_gateway_method.delete_task_method.http_method
+  resource_id = aws_api_gateway_resource.task_id_resource.id
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+  type        = "AWS_PROXY"
+  uri         = module.DeleteTaskLambda.lambda_function_invoke_arn
+}
+
+resource "aws_api_gateway_deployment" "api_deployment" {
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+
+  depends_on = [
+    aws_api_gateway_integration.get_task_integration,
+    aws_api_gateway_integration.post_task_integration,
+    aws_api_gateway_integration.update_task_integration,
+    aws_api_gateway_integration.delete_task_integration
+  ]
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_api_gateway_stage" "api_stage" {
+  deployment_id = aws_api_gateway_deployment.api_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.task_api.id
+  stage_name    = "v1"
+}
+
+
 resource "aws_iam_role_policy_attachment" "create_lambda_dynamodb_access" {
   role = module.CreateTaskLambda.iam_role_name
   policy_arn = aws_iam_policy.lambda_dynamodb_write_policy.arn
