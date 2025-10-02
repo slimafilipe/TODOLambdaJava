@@ -16,6 +16,7 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.util.List;
+import java.util.Map;
 
 public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
@@ -43,7 +44,8 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
         var logger = context.getLogger();
         logger.log("Recebida requisão para listar tarefas: " + input.getBody());
         try {
-            String userId = "user-id-123";
+            Map<String, String> querystringParameters = input.getQueryStringParameters();
+            String userId = querystringParameters.get("userId");
             List<Task> tasks = taskRepository.listTasks(userId);
 
             return ApiResponseBuilder.createSuccessResponse(200, tasks);
