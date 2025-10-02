@@ -126,32 +126,30 @@ module "DeleteTaskLambda" {
 }
 
 resource "aws_api_gateway_rest_api" "task_api" {
-  name = "TasksAPi"
+  name = "APITASKS"
 }
-resource "aws_api_gateway_resource" "task_resource" {
+resource "aws_api_gateway_resource" "tasks_resource" {
   parent_id   = aws_api_gateway_rest_api.task_api.root_resource_id
   path_part   = "tasks"
   rest_api_id = aws_api_gateway_rest_api.task_api.id
 }
-resource "aws_api_gateway_resource" "user_id_resource" {
-  parent_id   = aws_api_gateway_resource.task_resource.id
-  path_part   = "{userId}"
-  rest_api_id = aws_api_gateway_rest_api.task_api.id
-}
 resource "aws_api_gateway_resource" "task_id_resource" {
-  parent_id   = aws_api_gateway_resource.task_resource.id
+  parent_id   = aws_api_gateway_resource.tasks_resource.id
   path_part   = "{taskId}"
   rest_api_id = aws_api_gateway_rest_api.task_api.id
 }
+
+
 resource "aws_api_gateway_method" "post_task_method" {
   authorization = "NONE"
   http_method   = "POST"
-  resource_id   = aws_api_gateway_resource.task_resource.id
+  resource_id   = aws_api_gateway_resource.tasks_resource.id
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
 }
 resource "aws_api_gateway_integration" "post_task_integration" {
   http_method = aws_api_gateway_method.post_task_method.http_method
-  resource_id = aws_api_gateway_resource.task_resource.id
+  integration_http_method = "POST"
+  resource_id = aws_api_gateway_resource.tasks_resource.id
   rest_api_id = aws_api_gateway_rest_api.task_api.id
   type        = "AWS_PROXY"
   uri         = module.CreateTaskLambda.lambda_function_invoke_arn
@@ -160,12 +158,13 @@ resource "aws_api_gateway_integration" "post_task_integration" {
 resource "aws_api_gateway_method" "get_tasks_method" {
   authorization = "NONE"
   http_method   = "GET"
-  resource_id   = aws_api_gateway_resource.user_id_resource.id
+  resource_id   = aws_api_gateway_resource.tasks_resource.id
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
 }
 resource "aws_api_gateway_integration" "get_task_integration" {
   http_method = aws_api_gateway_method.get_tasks_method.http_method
-  resource_id = aws_api_gateway_resource.user_id_resource.id
+  integration_http_method = "POST"
+  resource_id = aws_api_gateway_resource.tasks_resource.id
   rest_api_id = aws_api_gateway_rest_api.task_api.id
   type        = "AWS_PROXY"
   uri         = module.ListTasksLambda.lambda_function_invoke_arn
@@ -179,6 +178,7 @@ resource "aws_api_gateway_method" "update_task_method" {
 }
 resource "aws_api_gateway_integration" "update_task_integration" {
   http_method = aws_api_gateway_method.update_task_method.http_method
+  integration_http_method = "POST"
   resource_id = aws_api_gateway_resource.task_id_resource.id
   rest_api_id = aws_api_gateway_rest_api.task_api.id
   type        = "AWS_PROXY"
@@ -192,6 +192,7 @@ resource "aws_api_gateway_method" "delete_task_method" {
 }
 resource "aws_api_gateway_integration" "delete_task_integration" {
   http_method = aws_api_gateway_method.delete_task_method.http_method
+  integration_http_method = "POST"
   resource_id = aws_api_gateway_resource.task_id_resource.id
   rest_api_id = aws_api_gateway_rest_api.task_api.id
   type        = "AWS_PROXY"
@@ -201,12 +202,20 @@ resource "aws_api_gateway_integration" "delete_task_integration" {
 resource "aws_api_gateway_deployment" "api_deployment" {
   rest_api_id = aws_api_gateway_rest_api.task_api.id
 
-  depends_on = [
-    aws_api_gateway_integration.get_task_integration,
-    aws_api_gateway_integration.post_task_integration,
-    aws_api_gateway_integration.update_task_integration,
-    aws_api_gateway_integration.delete_task_integration
-  ]
+  triggers = {
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.tasks_resource.id,
+      aws_api_gateway_resource.task_id_resource.id,
+      aws_api_gateway_method.post_task_method.id,
+      aws_api_gateway_integration.post_task_integration.id,
+      aws_api_gateway_method.get_tasks_method.id,
+      aws_api_gateway_integration.get_task_integration.id,
+      aws_api_gateway_method.update_task_method.id,
+      aws_api_gateway_integration.update_task_integration.id,
+      aws_api_gateway_method.delete_task_method.id,
+      aws_api_gateway_integration.delete_task_integration.id,
+    ]))
+  }
   lifecycle {
     create_before_destroy = true
   }
@@ -215,7 +224,42 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 resource "aws_api_gateway_stage" "api_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
-  stage_name    = "v1"
+  stage_name    = "v2"
+}
+
+# ----- Permissões de Invocação da API Gateway -----
+
+resource "aws_lambda_permission" "allow_api_gateway_create" {
+  statement_id  = "AllowAPIGatewayInvokeCreate"
+  action        = "lambda:InvokeFunction"
+  function_name = module.CreateTaskLambda.lambda_function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.post_task_method.http_method}${aws_api_gateway_resource.tasks_resource.path}"
+}
+
+resource "aws_lambda_permission" "allow_api_gateway_list" {
+  statement_id  = "AllowAPIGatewayInvokeList"
+  action        = "lambda:InvokeFunction"
+  function_name = module.ListTasksLambda.lambda_function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.get_tasks_method.http_method}${aws_api_gateway_resource.tasks_resource.path}"
+}
+
+
+resource "aws_lambda_permission" "allow_api_gateway_update" {
+  statement_id  = "AllowAPIGatewayInvokeUpdate"
+  action        = "lambda:InvokeFunction"
+  function_name = module.UpdateTaskLambda.lambda_function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.update_task_method.http_method}${aws_api_gateway_resource.task_id_resource.path}"
+}
+
+resource "aws_lambda_permission" "allow_api_gateway_delete" {
+  statement_id  = "AllowAPIGatewayInvokeDelete"
+  action        = "lambda:InvokeFunction"
+  function_name = module.DeleteTaskLambda.lambda_function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.delete_task_method.http_method}${aws_api_gateway_resource.task_id_resource.path}"
 }
 
 
