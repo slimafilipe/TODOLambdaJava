@@ -3,6 +3,11 @@ output "lambda_function_arn" {
   value = aws_lambda_function.this.arn
 }
 
+output "lambda_function_invoke_arn" {
+  description = "O ARN de invocação da função Lambda, para ser usado por triggers"
+  value = aws_lambda_function.this.invoke_arn
+}
+
 output "lambda_function_name" {
   description = "O nome da função Lambda criada"
   value = aws_lambda_function.this.function_name
