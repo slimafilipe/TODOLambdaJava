@@ -16,7 +16,7 @@ public class DeleteTaskHandler implements RequestHandler<APIGatewayProxyRequestE
     private final TaskRepository taskRepository;
 
     public DeleteTaskHandler() {
-        this.taskRepository= DependecyFactory.getTaskRepositoryInstance();
+        this.taskRepository = DependecyFactory.getTaskRepositoryInstance();
     }
     public DeleteTaskHandler(TaskRepository taskRepository){
         this.taskRepository = taskRepository;
@@ -35,13 +35,13 @@ public class DeleteTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             String taskId = input.getPathParameters().get("taskId");
             Optional<Task> existingTasksOptional = taskRepository.findTaskById(userId, taskId);
             if (existingTasksOptional.isEmpty()){
-                return ApiResponseBuilder.createErrorResponse(400, "Tarefa não encontrada.");
+                return ApiResponseBuilder.createErrorResponse(404, "Tarefa não encontrada.");
             }
             Task taskExisting = existingTasksOptional.get();
 
             taskRepository.delete(taskExisting);
             logger.log("Tarefa excluída com sucesso.");
-            return ApiResponseBuilder.createSuccessResponse(200, "Tarefa excluida com sucesso.");
+            return ApiResponseBuilder.createSuccessResponse(204, "Tarefa excluida com sucesso.");
         }catch (Exception e){
             logger.log("Erro ao excluir tarefa: " + e.getMessage());
             return ApiResponseBuilder.createErrorResponse(500, "Erro no servidor interno.");
