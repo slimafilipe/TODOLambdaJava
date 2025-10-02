@@ -18,6 +18,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,7 +64,8 @@ public class ListTaskHandlerTest {
 
         when(taskRepository.listTasks(userId)).thenReturn(listTasks);
 
-        APIGatewayProxyRequestEvent request= new APIGatewayProxyRequestEvent();
+        APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
+        request.setQueryStringParameters(Map.of("userId", userId));
 
         APIGatewayProxyResponseEvent response = listTasksHandler.handleRequest(request, context);
         assertEquals(200, response.getStatusCode());
