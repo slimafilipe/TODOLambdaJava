@@ -14,25 +14,25 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
+import java.util.Map;
+import java.util.Optional;
+
 public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Gson gson;
+    private final Gson gson = new Gson();
     private final TaskRepository taskRepository;
-    private final DynamoDbTable<Task> taskTable;
+
 
     public UpdateTaskHandler(){
         DynamoDbClient dynamoDbClient = DynamoDbClient.builder().build();
         DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
         String TABLE_NAME = System.getenv("TASKS_TABLE");
-        this.taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
-        this.gson = new Gson();
+        DynamoDbTable<Task> taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
         this.taskRepository = new TaskRepository(taskTable);
     }
 
-    public UpdateTaskHandler(DynamoDbTable<Task> taskTable, TaskRepository taskRepository, Gson gson) {
+    public UpdateTaskHandler(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
-        this.taskTable = taskTable;
-        this.gson = new Gson();
     }
 
 
@@ -41,19 +41,28 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
         var logger = context.getLogger();
         logger.log("Recebida requisão para atualizar tarefa: " + input.getBody());
         try{
+            Map<String, String> pathParameters = input.getPathParameters();
+            if (pathParameters == null || !pathParameters.containsKey("taskId")){
+              return  ApiResponseBuilder.createErrorResponse(400, "taskId obrigatório");
+            }
             String userId = "user-id-123";
             String taskId = input.getPathParameters().get("taskId");
-            String findedTask = gson.toJson(taskRepository.findTaskById(userId, taskId));
-            logger.log("Tarefa encontrada: " + findedTask);
-            String requestBody = input.getBody();
-            if (requestBody == null || requestBody.isEmpty()){
-                logger.log("Corpo da requisição está vázio:");
-                return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição está vázio");
-            }
-            Task task = gson.fromJson(requestBody, Task.class);
-            taskTable.putItem(task);
 
-            return ApiResponseBuilder.createSuccessResponse(200, "Tarefa editada com sucesso");
+            Optional<Task> existingTaskOptional = taskRepository.findTaskById(userId, taskId);
+            if (existingTaskOptional.isEmpty()){
+                return ApiResponseBuilder.createErrorResponse(400, "Tarefa não encontrada");
+            }
+            Task existingTask = existingTaskOptional.get();
+
+            String requestBody = input.getBody();
+            Task updateTaskData = gson.fromJson(requestBody, Task.class);
+            existingTask.setTitle(updateTaskData.getTitle());
+            existingTask.setDescription(updateTaskData.getDescription());
+            existingTask.setCompleted(updateTaskData.isCompleted());
+            taskRepository.save(existingTask);
+            logger.log("Tarefa atualizada com sucesso " + taskId);
+
+            return ApiResponseBuilder.createSuccessResponse(200, existingTask);
         }catch (JsonSyntaxException e){
             logger.log("Erro ao processar requisão" +  e.getMessage());
             return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição inválido");

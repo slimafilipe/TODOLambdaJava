@@ -95,6 +95,36 @@ module "ListTasksLambda" {
   }
 }
 
+module "UpdateTaskLambda" {
+  source = "../tf_modules/lambda"
+  function_name = "update-task-lambda-java"
+  handler = "dev.filipe.TODOLambdaJava.Controller.UpdateTaskHandler::handleRequest"
+  runtime = "java21"
+  source_code_path = "../target/TODOLambdaJava-1.0-SNAPSHOT.jar"
+  memory_size = 1024
+  timeout = 60
+  tasks_table_name = module.todo_table.table_name
+  tags = {
+    Project = "TODOLambdaJava"
+    ManagedBy = "Terraform"
+  }
+}
+
+module "DeleteTaskLambda" {
+  source = "../tf_modules/lambda"
+  function_name = "delete-task-lambda-java"
+  handler = "dev.filipe.TODOLambdaJava.Controller.DeleteTaskHandler::handleRequest"
+  runtime = "java21"
+  source_code_path = "../target/TODOLambdaJava-1.0-SNAPSHOT.jar"
+  memory_size = 1024
+  timeout = 60
+  tasks_table_name = module.todo_table.table_name
+  tags = {
+    Project = "TODOLambdaJava"
+    ManagedBy = "Terraform"
+  }
+}
+
 resource "aws_iam_role_policy_attachment" "create_lambda_dynamodb_access" {
   role = module.CreateTaskLambda.iam_role_name
   policy_arn = aws_iam_policy.lambda_dynamodb_write_policy.arn
@@ -104,6 +134,16 @@ resource "aws_iam_role_policy_attachment" "list_lambda_dynamodb_read_access" {
   role = module.ListTasksLambda.iam_role_name
 
   policy_arn = aws_iam_policy.lambda_dynamodb_read_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "update_lambda_dynamo_acess" {
+  role       = module.UpdateTaskLambda.iam_role_name
+  policy_arn = aws_iam_policy.lambda_dynamodb_write_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "delete_lambda_dynamo_acess" {
+  role       = module.DeleteTaskLambda.iam_role_name
+  policy_arn = aws_iam_policy.lambda_dynamodb_write_policy.arn
 }
 
 output "nome_da_tabela" {
