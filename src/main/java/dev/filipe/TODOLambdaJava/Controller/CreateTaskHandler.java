@@ -62,8 +62,6 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             taskTable.putItem(task);
             logger.log("Tarefa criada com sucesso com ID: " + task.getTaskId());
 
-          //  String responseBody = gson.toJson(task);
-
             return ApiResponseBuilder.createSuccessResponse(201, gson.toJson(task));
         } catch (JsonSyntaxException e) {
             logger.log("Erro ao processar JSON: " + e.getMessage());
