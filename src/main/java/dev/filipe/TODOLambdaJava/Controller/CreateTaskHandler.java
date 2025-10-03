@@ -17,7 +17,6 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.UUID;
 
 
