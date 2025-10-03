@@ -37,9 +37,9 @@ public class DeleteTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             if (existingTasksOptional.isEmpty()){
                 return ApiResponseBuilder.createErrorResponse(404, "Tarefa não encontrada.");
             }
-            Task taskExisting = existingTasksOptional.get();
+            Task taskToDelete = existingTasksOptional.get();
 
-            taskRepository.delete(taskExisting);
+            taskRepository.delete(taskToDelete);
             logger.log("Tarefa excluída com sucesso.");
             return ApiResponseBuilder.createSuccessResponse(204, "Tarefa excluida com sucesso.");
         }catch (Exception e){

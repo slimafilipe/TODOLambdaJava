@@ -17,7 +17,6 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.UUID;
 
 
@@ -61,8 +60,6 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
 
             taskTable.putItem(task);
             logger.log("Tarefa criada com sucesso com ID: " + task.getTaskId());
-
-          //  String responseBody = gson.toJson(task);
 
             return ApiResponseBuilder.createSuccessResponse(201, gson.toJson(task));
         } catch (JsonSyntaxException e) {
