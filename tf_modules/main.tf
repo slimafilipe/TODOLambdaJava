@@ -297,3 +297,12 @@ output "arn_da_list_lambda" {
     value = module.ListTasksLambda.lambda_function_arn
 }
 
+output "arn_da_update_lambda" {
+  description = "O ARN da função Lambda para atualização de tarefas"
+  value = module.UpdateTaskLambda.lambda_function_arn
+}
+output "arn_delete_lambda" {
+  description = "O ARN da função Lambda para deletar tarefas"
+  value = module.DeleteTaskLambda.lambda_function_arn
+}
+
