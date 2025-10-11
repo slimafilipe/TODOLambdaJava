@@ -12,7 +12,7 @@ jobs:
     name: 'terraform plan dev'
     runs-on: ubuntu-latest
     env:
-      TF_WORKING_DIR: 'tf_modules'
+      TF_WORKING_DIR: '../tf_modules'
 
     defaults:
       run:
