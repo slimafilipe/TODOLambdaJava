@@ -1,5 +1,6 @@
 package dev.filipe.TODOLambdaJava.Controller;
 
+import dev.filipe.TODOLambdaJava.Config.DependecyFactory;
 import dev.filipe.TODOLambdaJava.Model.Task;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -10,6 +11,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import dev.filipe.TODOLambdaJava.util.AuthUtils;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -27,22 +29,16 @@ import java.util.UUID;
 
 public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Gson gson;
-
-    private final DynamoDbTable<Task> taskTable ;
+    private final Gson gson = new Gson();
+    private final TaskRepository taskRepository;
 
     public CreateTaskHandler(){
-        DynamoDbClient dynamoDbClient = DynamoDbClient.builder().build();
-        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
-        String TABLE_NAME = System.getenv("TASKS_TABLE");
-        this.taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
-        this.gson = new Gson();
+        this.taskRepository = DependecyFactory.getTaskRepository();
     }
 
     // Construtor para injeção de dependência em testes
-    public CreateTaskHandler(DynamoDbTable<Task> taskTable, Gson gson) {
-        this.taskTable = taskTable;
-        this.gson = gson;
+    public CreateTaskHandler(TaskRepository taskRepository) {
+       this.taskRepository = taskRepository;
     }
 
     @Override
@@ -64,11 +60,11 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
 
             Task task = gson.fromJson(requestBody, Task.class);
             task.setUserId("USER#" + userId );
-            task.setTaskId("Task#" + UUID.randomUUID());
+            task.setTaskId("TASK#" + UUID.randomUUID().toString());
             task.setCreatedAt(Instant.now().toString());
             task.setCompleted(false);
 
-            taskTable.putItem(task);
+            taskRepository.save(task);
             logger.log("Tarefa criada com sucesso com ID: " + task.getTaskId());
 
             return ApiResponseBuilder.createSuccessResponse(201, task);

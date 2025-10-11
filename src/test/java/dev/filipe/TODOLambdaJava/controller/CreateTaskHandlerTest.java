@@ -7,6 +7,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import dev.filipe.TODOLambdaJava.repository.TaskRepository;
+import dev.filipe.TODOLambdaJava.util.AuthUtils;
+import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 
 import com.google.gson.Gson;
@@ -17,7 +20,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,7 +43,7 @@ public class CreateTaskHandlerTest {
     private LambdaLogger logger;
 
     @Mock
-    private DynamoDbTable<Task> taskTable;
+    private TaskRepository taskRepository;
 
     private CreateTaskHandler createTaskHandler ;
 
@@ -41,28 +52,40 @@ public class CreateTaskHandlerTest {
     @BeforeEach
     void setUp() {
         // Usando o construtor que aceita dependências para injeção de mocks
-        createTaskHandler = new CreateTaskHandler(taskTable, gson);
-
         when(context.getLogger()).thenReturn(logger);
+        createTaskHandler = new CreateTaskHandler(taskRepository);
     }
 
     @Test
-    void testHandleRequest() {
+    void shoudCreateTaskSucessfully() {
+        String cognitoUserId = UUID.randomUUID().toString();
 
-        Task task = new Task();
-        task.setTitle("Testando task");
-        task.setDescription("Este é um teste");
+        Task inputTask = new Task();
+        inputTask.setTitle("Testando task");
+        inputTask.setDescription("Este é um teste");
 
-        APIGatewayProxyRequestEvent expectredRequest = new APIGatewayProxyRequestEvent();
-        expectredRequest.setBody(gson.toJson(task));
+        APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
+        request.setBody(gson.toJson(inputTask));
 
-        APIGatewayProxyResponseEvent expectedResponse = createTaskHandler.handleRequest(expectredRequest, context);
+        APIGatewayProxyRequestEvent.ProxyRequestContext requestContext = new APIGatewayProxyRequestEvent.ProxyRequestContext();
+        Map<String, Object> authorizer = Map.of("claims", Map.of("sub", cognitoUserId));
+        requestContext.setAuthorizer(authorizer);
+        request.setRequestContext(requestContext);
+
+
+        APIGatewayProxyResponseEvent expectedResponse = createTaskHandler.handleRequest(request, context);
         assertEquals(201, expectedResponse.getStatusCode());
 
-        verify(taskTable).putItem(any(Task.class));
+        ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
+        verify(taskRepository).save(taskCaptor.capture());
+        Task savedTask = taskCaptor.getValue();
 
-
-
+        assertEquals("Testando task", savedTask.getTitle());
+        assertEquals("Este é um teste", savedTask.getDescription());
+        assertEquals("USER#" + cognitoUserId, savedTask.getUserId());
+        assertTrue(savedTask.getTaskId().startsWith("TASK#"));
+        assertNotNull(savedTask.getCreatedAt());
+        assertFalse(savedTask.isCompleted());
     }
 
 }

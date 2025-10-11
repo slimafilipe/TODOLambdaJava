@@ -17,7 +17,7 @@ public class DeleteTaskHandler implements RequestHandler<APIGatewayProxyRequestE
     private final TaskRepository taskRepository;
 
     public DeleteTaskHandler() {
-        this.taskRepository = DependecyFactory.getTaskRepositoryInstance();
+        this.taskRepository = DependecyFactory.getTaskRepository();
     }
     public DeleteTaskHandler(TaskRepository taskRepository){
         this.taskRepository = taskRepository;
