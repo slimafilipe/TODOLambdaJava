@@ -19,6 +19,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,26 +54,32 @@ public class ListTaskHandlerTest {
     }
 
     @Test
-    void testHandleResponse() {
+    void shouldReturn200WithListOfTasksForAuthenticatedUser() {
 
-        String userId = "user-id-123";
+        String cognitoUserId = UUID.randomUUID().toString();
+        String userPartitionKey = "USER#" + cognitoUserId;
 
-        Task task = new Task();
-        task.setTitle("Task 1");
+        Task inputTask = new Task();
+        inputTask.setTitle("Testando task");
+        inputTask.setDescription("Este é um teste");
 
-        List<Task> listTasks = List.of(task);
+        List<Task> listTasks = List.of(inputTask);
 
-        when(taskRepository.listTasks(userId)).thenReturn(listTasks);
+        when(taskRepository.listTasks(userPartitionKey)).thenReturn(listTasks);
 
         APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
-        request.setQueryStringParameters(Map.of("userId", userId));
+        APIGatewayProxyRequestEvent.ProxyRequestContext requestContext = new APIGatewayProxyRequestEvent.ProxyRequestContext();
+        Map<String, Object> authorizer = Map.of("claims", Map.of("sub", cognitoUserId));
+        requestContext.setAuthorizer(authorizer);
+        request.setRequestContext(requestContext);
+
 
         APIGatewayProxyResponseEvent response = listTasksHandler.handleRequest(request, context);
         assertEquals(200, response.getStatusCode());
         assertEquals(gson.toJson(listTasks), response.getBody());
 
 
-        verify(taskRepository).listTasks(userId);
+        verify(taskRepository).listTasks(userPartitionKey);
 
     }
 
