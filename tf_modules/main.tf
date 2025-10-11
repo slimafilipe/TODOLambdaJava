@@ -3,6 +3,46 @@ provider "aws" {
   profile = "tf_windows_filipelima"
 }
 
+# --------------------------------------------
+#----- Configuração do Amazon Cognito ------
+# ---------------------------------------------
+
+resource "aws_cognito_user_pool" "user_pool" {
+  name = "task-user-pool"
+
+  schema {
+    attribute_data_type = "String"
+    name                = "email"
+    mutable             = false
+    required            = true
+  }
+  password_policy {
+    minimum_length    =  8
+    require_lowercase = true
+    require_uppercase = true
+    require_numbers   = true
+    require_symbols   = false
+  }
+  username_attributes = ["email"]
+
+  tags = {
+    Project = "TODOLambdaJava"
+  }
+}
+
+resource "aws_cognito_user_pool_client" "app_client" {
+  name         = "tasks-app-client"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  explicit_auth_flows = ["ALLOW_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
+}
+
+resource "aws_api_gateway_authorizer" "cognito_authorizer" {
+  name        = "TaskApiCognitoAuthorizer"
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+  type        = "COGNITO_USER_POOLS"
+  provider_arns = [aws_cognito_user_pool.user_pool.arn]
+}
+
 # ----- Módulo DynamoDB ------
 module "todo_table" {
   source = "../tf_modules/dynamodb"
@@ -141,7 +181,8 @@ resource "aws_api_gateway_resource" "task_id_resource" {
 
 
 resource "aws_api_gateway_method" "post_task_method" {
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
   http_method   = "POST"
   resource_id   = aws_api_gateway_resource.tasks_resource.id
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
@@ -156,7 +197,8 @@ resource "aws_api_gateway_integration" "post_task_integration" {
 }
 
 resource "aws_api_gateway_method" "get_tasks_method" {
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
   http_method   = "GET"
   resource_id   = aws_api_gateway_resource.tasks_resource.id
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
@@ -171,7 +213,8 @@ resource "aws_api_gateway_integration" "get_task_integration" {
 }
 
 resource "aws_api_gateway_method" "update_task_method" {
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
   http_method   = "PUT"
   resource_id   = aws_api_gateway_resource.task_id_resource.id
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
@@ -185,7 +228,8 @@ resource "aws_api_gateway_integration" "update_task_integration" {
   uri         = module.UpdateTaskLambda.lambda_function_invoke_arn
 }
 resource "aws_api_gateway_method" "delete_task_method" {
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
   http_method   = "DELETE"
   resource_id   = aws_api_gateway_resource.task_id_resource.id
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
