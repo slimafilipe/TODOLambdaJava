@@ -108,7 +108,7 @@ module "CreateTaskLambda" {
     function_name     = "create-task-lambda-java"
     handler           = "dev.filipe.TODOLambdaJava.Controller.CreateTaskHandler::handleRequest"
     runtime           = "java21"
-    source_code_path  = "../target/TODOLambdaJava-1.0-SNAPSHOT.jar"
+    source_code_path  = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
     memory_size       = 1024
     timeout           = 60
     tasks_table_name = module.todo_table.table_name
@@ -124,7 +124,7 @@ module "ListTasksLambda" {
   function_name = "list-tasks-lambda-java"
   handler = "dev.filipe.TODOLambdaJava.Controller.ListTasksHandler::handleRequest"
   runtime = "java21"
-  source_code_path = "../target/TODOLambdaJava-1.0-SNAPSHOT.jar"
+  source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
     memory_size = 1024
   timeout = 60
   tasks_table_name = module.todo_table.table_name
@@ -139,7 +139,7 @@ module "UpdateTaskLambda" {
   function_name = "update-task-lambda-java"
   handler = "dev.filipe.TODOLambdaJava.Controller.UpdateTaskHandler::handleRequest"
   runtime = "java21"
-  source_code_path = "../target/TODOLambdaJava-1.0-SNAPSHOT.jar"
+  source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
   memory_size = 1024
   timeout = 60
   tasks_table_name = module.todo_table.table_name
@@ -154,7 +154,7 @@ module "DeleteTaskLambda" {
   function_name = "delete-task-lambda-java"
   handler = "dev.filipe.TODOLambdaJava.Controller.DeleteTaskHandler::handleRequest"
   runtime = "java21"
-  source_code_path = "../target/TODOLambdaJava-1.0-SNAPSHOT.jar"
+  source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
   memory_size = 1024
   timeout = 60
   tasks_table_name = module.todo_table.table_name

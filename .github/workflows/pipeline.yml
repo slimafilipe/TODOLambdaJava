@@ -20,9 +20,7 @@ jobs:
           java-version: '21'
           distribution: 'corretto'
       - name: Build and test with Maven
-        run: |
-            mvn clean install
-            mvn test
+        run: mvn clean install
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
