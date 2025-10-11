@@ -1,0 +1,35 @@
+name: Java Lambda CD - Build & Terraform apply
+on:
+  push:
+    branches:
+      - dev
+permissions:
+  contents: read
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID}}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+jobs:
+  terraform-apply:
+    name: 'Terraform apply'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+          cache: 'maven'
+      - name: Build and test with Maven
+        run: mvn clean install
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.1.7"
+      - name: Terraform Init
+        uses: terraform init
+      - name: Terraform Apply
+        uses: terraform apply -auto-approve

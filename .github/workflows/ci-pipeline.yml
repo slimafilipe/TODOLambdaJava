@@ -1,4 +1,4 @@
-name: Lambda Java CI - Build & test
+name: Lambda Java CI - Build, test & terraform plan
 on:
   pull_request:
     branches: [dev, main]
