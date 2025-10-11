@@ -9,6 +9,7 @@ import com.google.gson.JsonSyntaxException;
 import dev.filipe.TODOLambdaJava.Model.Task;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
+import dev.filipe.TODOLambdaJava.util.AuthUtils;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
@@ -41,14 +42,21 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
         var logger = context.getLogger();
         logger.log("Recebida requisão para atualizar tarefa: " + input.getBody());
         try{
+
+            Optional<String> userIdOpt = AuthUtils.getUserId(input);
+            if (userIdOpt.isEmpty()){
+                return ApiResponseBuilder.createErrorResponse(401, "Não autorizado.");
+            }
+            String userId = userIdOpt.get();
+            String userPK = "USER#" + userId;
+
             Map<String, String> pathParameters = input.getPathParameters();
             if (pathParameters == null || !pathParameters.containsKey("taskId")){
               return  ApiResponseBuilder.createErrorResponse(400, "taskId obrigatório");
             }
-            String userId = "user-id-123";
             String taskId = input.getPathParameters().get("taskId");
 
-            Optional<Task> existingTaskOptional = taskRepository.findTaskById(userId, taskId);
+            Optional<Task> existingTaskOptional = taskRepository.findTaskById(userPK, taskId);
             if (existingTaskOptional.isEmpty()){
                 return ApiResponseBuilder.createErrorResponse(400, "Tarefa não encontrada");
             }

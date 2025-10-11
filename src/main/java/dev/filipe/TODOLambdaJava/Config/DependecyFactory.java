@@ -20,7 +20,7 @@ public class DependecyFactory {
 
     private DependecyFactory() {}
 
-    public static TaskRepository getTaskRepositoryInstance(){
+    public static TaskRepository getTaskRepository(){
         return taskRepositoryInstance;
     }
 

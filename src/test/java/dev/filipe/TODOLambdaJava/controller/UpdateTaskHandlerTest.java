@@ -18,6 +18,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,14 +53,16 @@ public class UpdateTaskHandlerTest {
     }
 
     @Test
-    void testUpdateHandler(){
+    void shouldReturn200WithListOfTaskForAuthenticatedUser(){
 
-        String userId = "user-id-123";
-        String taskId = "task-id-123";
+        String cognitoUserId = UUID.randomUUID().toString();
+        String userPartitionKey = "USER#" + cognitoUserId;
+        String taskId = UUID.randomUUID().toString();
+        String taskSortKey = "TASK#" + taskId;
 
         Task existingTask = new Task();
-        existingTask.setUserId(userId);
-        existingTask.setTaskId(taskId);
+        existingTask.setUserId(userPartitionKey);
+        existingTask.setTaskId(taskSortKey);
         existingTask.setTitle("Task já existente");
         existingTask.setDescription("Este é um teste");
         existingTask.setCompleted(false);
@@ -70,10 +73,14 @@ public class UpdateTaskHandlerTest {
         updateTask.setCompleted(true);
 
         when(taskRepository.findTaskById(anyString(), anyString())).thenReturn(Optional.empty());
-        when(taskRepository.findTaskById(userId, taskId)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.findTaskById(userPartitionKey, taskSortKey)).thenReturn(Optional.of(existingTask));
 
         APIGatewayProxyRequestEvent request= new APIGatewayProxyRequestEvent();
-        request.setPathParameters(Map.of("taskId", taskId));
+        APIGatewayProxyRequestEvent.ProxyRequestContext requestContext = new APIGatewayProxyRequestEvent.ProxyRequestContext();
+        Map<String, Object> authorizer = Map.of("claims", Map.of("sub", cognitoUserId));
+        requestContext.setAuthorizer(authorizer);
+        request.setRequestContext(requestContext);
+        request.setPathParameters(Map.of("taskId", taskSortKey));
         request.setBody(gson.toJson(updateTask));
 
         APIGatewayProxyResponseEvent response = updateTaskHandler.handleRequest(request, context);
@@ -87,8 +94,8 @@ public class UpdateTaskHandlerTest {
         assertEquals("Novo corpo da tarefa", savedTask.getDescription());
         assertTrue(savedTask.isCompleted());
 
-        assertEquals(userId, savedTask.getUserId());
-        assertEquals(taskId, savedTask.getTaskId());
+        assertEquals(userPartitionKey, savedTask.getUserId());
+        assertEquals(taskSortKey, savedTask.getTaskId());
     }
 
 }

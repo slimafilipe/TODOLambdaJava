@@ -8,6 +8,7 @@ import dev.filipe.TODOLambdaJava.Config.DependecyFactory;
 import dev.filipe.TODOLambdaJava.Model.Task;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
+import dev.filipe.TODOLambdaJava.util.AuthUtils;
 
 import java.util.Map;
 import java.util.Optional;
@@ -16,7 +17,7 @@ public class DeleteTaskHandler implements RequestHandler<APIGatewayProxyRequestE
     private final TaskRepository taskRepository;
 
     public DeleteTaskHandler() {
-        this.taskRepository = DependecyFactory.getTaskRepositoryInstance();
+        this.taskRepository = DependecyFactory.getTaskRepository();
     }
     public DeleteTaskHandler(TaskRepository taskRepository){
         this.taskRepository = taskRepository;
@@ -27,13 +28,21 @@ public class DeleteTaskHandler implements RequestHandler<APIGatewayProxyRequestE
         var logger = context.getLogger();
         logger.log("Requisição para deletar tarefa recebida com sucesso.");
         try{
+
+            Optional<String> userIdOpt = AuthUtils.getUserId(input);
+            if (userIdOpt.isEmpty()){
+                return ApiResponseBuilder.createErrorResponse(401, "Não autorizado.");
+            }
+            String userId = userIdOpt.get();
+            String userPK = "USER#" + userId;
+
+
             Map<String, String> pathParameters = input.getPathParameters();
             if (pathParameters == null || !pathParameters.containsKey("taskId")){
                 return ApiResponseBuilder.createErrorResponse(400, "taskId é obrigatório.");
             }
-            String userId = "user-id-123";
             String taskId = input.getPathParameters().get("taskId");
-            Optional<Task> existingTasksOptional = taskRepository.findTaskById(userId, taskId);
+            Optional<Task> existingTasksOptional = taskRepository.findTaskById(userPK, taskId);
             if (existingTasksOptional.isEmpty()){
                 return ApiResponseBuilder.createErrorResponse(404, "Tarefa não encontrada.");
             }
