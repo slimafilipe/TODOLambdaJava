@@ -16,13 +16,6 @@ jobs:
   plan-dev:
     name: 'terraform plan dev'
     runs-on: ubuntu-latest
-    env:
-      TF_WORKING_DIR: 'tf_modules'
-
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ env.TF_WORKING_DIR}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

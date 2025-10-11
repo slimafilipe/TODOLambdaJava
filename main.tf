@@ -44,7 +44,7 @@ resource "aws_api_gateway_authorizer" "cognito_authorizer" {
 
 # ----- Módulo DynamoDB ------
 module "todo_table" {
-  source = "../tf_modules/dynamodb"
+  source = "./tf_modules/dynamodb"
 
   table_name = "Tasks"
   hash_key_name = "userId"
@@ -103,7 +103,7 @@ resource "aws_iam_policy" "lambda_dynamodb_read_policy" {
 
 
 module "CreateTaskLambda" {
-    source = "../tf_modules/lambda"
+    source = "./tf_modules/lambda"
 
     function_name     = "create-task-lambda-java"
     handler           = "dev.filipe.TODOLambdaJava.Controller.CreateTaskHandler::handleRequest"
@@ -119,7 +119,7 @@ module "CreateTaskLambda" {
 }
 
 module "ListTasksLambda" {
-  source = "../tf_modules/lambda"
+  source = "./tf_modules/lambda"
 
   function_name = "list-tasks-lambda-java"
   handler = "dev.filipe.TODOLambdaJava.Controller.ListTasksHandler::handleRequest"
@@ -135,7 +135,7 @@ module "ListTasksLambda" {
 }
 
 module "UpdateTaskLambda" {
-  source = "../tf_modules/lambda"
+  source = "./tf_modules/lambda"
   function_name = "update-task-lambda-java"
   handler = "dev.filipe.TODOLambdaJava.Controller.UpdateTaskHandler::handleRequest"
   runtime = "java21"
@@ -150,7 +150,7 @@ module "UpdateTaskLambda" {
 }
 
 module "DeleteTaskLambda" {
-  source = "../tf_modules/lambda"
+  source = "./tf_modules/lambda"
   function_name = "delete-task-lambda-java"
   handler = "dev.filipe.TODOLambdaJava.Controller.DeleteTaskHandler::handleRequest"
   runtime = "java21"
