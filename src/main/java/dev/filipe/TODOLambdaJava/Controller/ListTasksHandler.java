@@ -10,6 +10,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.google.gson.Gson;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
+import dev.filipe.TODOLambdaJava.util.AuthUtils;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
@@ -17,6 +18,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
@@ -44,9 +46,15 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
         var logger = context.getLogger();
         logger.log("Recebida requisão para listar tarefas: " + input.getBody());
         try {
-            Map<String, String> querystringParameters = input.getQueryStringParameters();
-            String userId = querystringParameters.get("userId");
-            List<Task> tasks = taskRepository.listTasks(userId);
+           // Map<String, String> querystringParameters = input.getQueryStringParameters();
+           // String userId = querystringParameters.get("userId");
+            Optional<String> userIdOpt = AuthUtils.getUserId(input);
+            if (userIdOpt.isEmpty()){
+                return ApiResponseBuilder.createErrorResponse(401, "Não autorizado.");
+            }
+            String userId = userIdOpt.get();
+            String userPK = "USER#" + userId;
+            List<Task> tasks = taskRepository.listTasks(userPK);
 
             return ApiResponseBuilder.createSuccessResponse(200, tasks);
         } catch (JsonSyntaxException e){

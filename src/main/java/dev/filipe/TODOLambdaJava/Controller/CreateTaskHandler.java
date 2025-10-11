@@ -11,12 +11,15 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
+import dev.filipe.TODOLambdaJava.util.AuthUtils;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -47,21 +50,28 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
         var logger = context.getLogger();
         logger.log("Recebida requisão para cria tarefa: " + input.getBody());
         try {
+            Optional<String> userIdOpt = AuthUtils.getUserId(input);
+            if (userIdOpt.isEmpty()){
+                return ApiResponseBuilder.createErrorResponse(401, "Não encontrado.");
+            }
+            String userId = userIdOpt.get();
+
             String requestBody = input.getBody();
             if (requestBody == null || requestBody.isEmpty()) {
                 logger.log("Corpo da requisição está vazio");
                 return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição está vazio");
             }
+
             Task task = gson.fromJson(requestBody, Task.class);
-            task.setUserId("user-id-123");
-            task.setTaskId(UUID.randomUUID().toString());
+            task.setUserId("USER#" + userId );
+            task.setTaskId("Task#" + UUID.randomUUID());
             task.setCreatedAt(Instant.now().toString());
             task.setCompleted(false);
 
             taskTable.putItem(task);
             logger.log("Tarefa criada com sucesso com ID: " + task.getTaskId());
 
-            return ApiResponseBuilder.createSuccessResponse(201, gson.toJson(task));
+            return ApiResponseBuilder.createSuccessResponse(201, task);
         } catch (JsonSyntaxException e) {
             logger.log("Erro ao processar JSON: " + e.getMessage());
             return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição inválido");
