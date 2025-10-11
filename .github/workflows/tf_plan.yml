@@ -3,7 +3,7 @@ name: Create terraform plan tf_modules
 on:
   pull_request:
     paths:
-      - '../tf_modules'
+      - 'tf_modules'
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID}}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
@@ -12,12 +12,12 @@ jobs:
     name: 'terraform plan dev'
     runs-on: ubuntu-latest
     env:
-      TF_WORKING_DIR: '../tf_modules'
+      TF_WORKING_DIR: 'tf_modules'
 
     defaults:
       run:
         shell: bash
-        working-directory: ${{ TF_WORKING_DIR}}
+        working-directory: ${{ env.TF_WORKING_DIR}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
