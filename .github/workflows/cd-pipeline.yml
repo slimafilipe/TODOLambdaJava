@@ -30,6 +30,6 @@ jobs:
         with:
           terraform_version: "1.1.7"
       - name: Terraform Init
-        uses: terraform init
+        run: terraform init
       - name: Terraform Apply
-        uses: terraform apply -auto-approve
+        run: terraform apply -auto-approve
