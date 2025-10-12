@@ -106,7 +106,7 @@ module "CreateTaskLambda" {
     source = "./tf_modules/lambda"
 
     function_name     = "create-task-lambda-java"
-    handler           = "dev.filipe.TODOLambdaJava.Controller.CreateTaskHandler::handleRequest"
+    handler           = "dev.filipe.TODOLambdaJava.controller.CreateTaskHandler::handleRequest"
     runtime           = "java21"
     source_code_path  = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
     memory_size       = 1024
@@ -122,7 +122,7 @@ module "ListTasksLambda" {
   source = "./tf_modules/lambda"
 
   function_name = "list-tasks-lambda-java"
-  handler = "dev.filipe.TODOLambdaJava.Controller.ListTasksHandler::handleRequest"
+  handler = "dev.filipe.TODOLambdaJava.controller.ListTasksHandler::handleRequest"
   runtime = "java21"
   source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
     memory_size = 1024
@@ -137,7 +137,7 @@ module "ListTasksLambda" {
 module "UpdateTaskLambda" {
   source = "./tf_modules/lambda"
   function_name = "update-task-lambda-java"
-  handler = "dev.filipe.TODOLambdaJava.Controller.UpdateTaskHandler::handleRequest"
+  handler = "dev.filipe.TODOLambdaJava.Controller.cpdateTaskHandler::handleRequest"
   runtime = "java21"
   source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
   memory_size = 1024
@@ -152,7 +152,22 @@ module "UpdateTaskLambda" {
 module "DeleteTaskLambda" {
   source = "./tf_modules/lambda"
   function_name = "delete-task-lambda-java"
-  handler = "dev.filipe.TODOLambdaJava.Controller.DeleteTaskHandler::handleRequest"
+  handler = "dev.filipe.TODOLambdaJava.controller.DeleteTaskHandler::handleRequest"
+  runtime = "java21"
+  source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
+  memory_size = 1024
+  timeout = 60
+  tasks_table_name = module.todo_table.table_name
+  tags = {
+    Project = "TODOLambdaJava"
+    ManagedBy = "Terraform"
+  }
+}
+
+module "GetTaskByIdLambda" {
+  source = "./tf_modules/lambda"
+  function_name = "get-task-by-id-lambda-java"
+  handler = "dev.filipe.TODOLambdaJava.controller.GetTaskByIdHandler::handleRequest"
   runtime = "java21"
   source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
   memory_size = 1024
@@ -211,6 +226,22 @@ resource "aws_api_gateway_integration" "get_task_integration" {
   uri         = module.ListTasksLambda.lambda_function_invoke_arn
 }
 
+resource "aws_api_gateway_method" "get_tasks_by_id_method" {
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  http_method   = "GET"
+  resource_id   = aws_api_gateway_resource.tasks_resource.id
+  rest_api_id   = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_integration" "get_task_by_id_integration" {
+  http_method = aws_api_gateway_method.get_tasks_method.http_method
+  integration_http_method = "POST"
+  resource_id = aws_api_gateway_resource.tasks_resource.id
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+  type        = "AWS_PROXY"
+  uri         = module.ListTasksLambda.lambda_function_invoke_arn
+}
+
 resource "aws_api_gateway_method" "update_task_method" {
   authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
@@ -257,6 +288,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.update_task_integration.id,
       aws_api_gateway_method.delete_task_method.id,
       aws_api_gateway_integration.delete_task_integration.id,
+      aws_api_gateway_method.get_tasks_by_id_method.id,
+      aws_api_gateway_integration.get_task_by_id_integration.id,
     ]))
   }
   lifecycle {
@@ -288,6 +321,14 @@ resource "aws_lambda_permission" "allow_api_gateway_list" {
   source_arn    = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.get_tasks_method.http_method}${aws_api_gateway_resource.tasks_resource.path}"
 }
 
+resource "aws_lambda_permission" "allow_api_gateway_get_by_id" {
+  statement_id  = "AllowAPIGatewayInvokeList"
+  action        = "lambda:InvokeFunction"
+  function_name = module.GetTaskByIdLambda.lambda_function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.get_tasks_by_id_method.http_method}${aws_api_gateway_resource.tasks_resource.path}"
+}
+
 
 resource "aws_lambda_permission" "allow_api_gateway_update" {
   statement_id  = "AllowAPIGatewayInvokeUpdate"
@@ -317,6 +358,12 @@ resource "aws_iam_role_policy_attachment" "list_lambda_dynamodb_read_access" {
   policy_arn = aws_iam_policy.lambda_dynamodb_read_policy.arn
 }
 
+resource "aws_iam_role_policy_attachment" "get_by_id_lambda_dynamodb_read_access" {
+  role = module.GetTaskByIdLambda.iam_role_name
+
+  policy_arn = aws_iam_policy.lambda_dynamodb_read_policy.arn
+}
+
 resource "aws_iam_role_policy_attachment" "update_lambda_dynamo_acess" {
   role       = module.UpdateTaskLambda.iam_role_name
   policy_arn = aws_iam_policy.lambda_dynamodb_write_policy.arn
@@ -338,6 +385,11 @@ output "arn_da_create_lambda" {
 output "arn_da_list_lambda" {
     description = "O ARN da função Lambda de listagem de tarefas"
     value = module.ListTasksLambda.lambda_function_arn
+}
+
+output "arn_da_get_by_id_lambda" {
+  description = "O ARN da função Lambda de listagem de tarefas por id"
+  value = module.GetTaskByIdLambda.lambda_function_arn
 }
 
 output "arn_da_update_lambda" {
