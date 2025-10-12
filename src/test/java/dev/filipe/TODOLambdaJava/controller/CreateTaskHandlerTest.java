@@ -1,16 +1,13 @@
 package dev.filipe.TODOLambdaJava.controller;
 
-import dev.filipe.TODOLambdaJava.Controller.CreateTaskHandler;
-import dev.filipe.TODOLambdaJava.Model.Task;
+import dev.filipe.TODOLambdaJava.model.Task;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
-import dev.filipe.TODOLambdaJava.util.AuthUtils;
 import org.mockito.ArgumentCaptor;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 
 import com.google.gson.Gson;
 
@@ -20,9 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -1,5 +1,6 @@
 package dev.filipe.TODOLambdaJava.controller;
 
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
@@ -18,14 +19,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class ListTaskHandlerTest {
+public class GetTaskByIdHandlerTest {
 
     @Mock
     private Context context;
@@ -34,53 +37,47 @@ public class ListTaskHandlerTest {
     private LambdaLogger logger;
 
     @Mock
-    private TaskRepository taskRepository;
+    TaskRepository taskRepository;
 
-    private ListTasksHandler listTasksHandler ;
+    private GetTaskByIdHandler getTaskByIdHandler;
 
-    private final Gson gson = new Gson();
+    private Gson gson = new Gson();
 
     @BeforeEach
-    void setUp() {
-        listTasksHandler = new ListTasksHandler(taskRepository);
-
+    void setUp(){
+        getTaskByIdHandler = new GetTaskByIdHandler(taskRepository);
 
         when(context.getLogger()).thenReturn(logger);
     }
 
     @Test
-    void shouldReturn200WithListOfTasksForAuthenticatedUser() {
+    void shouldReturn200WithGetTaskByIdForAuthenticadedUser(){
 
-        String cognitoUserId = UUID.randomUUID().toString();
-        String userPartitionKey = Constants.USER_PREFIX + cognitoUserId;
-        String taskSortKey = Constants.TASK_PREFIX + UUID.randomUUID().toString();
+        String cognitoUser = UUID.randomUUID().toString();
+        String taskId = UUID.randomUUID().toString();
+
         Task taskFromDb = new Task();
-        taskFromDb.setUserId(userPartitionKey);
-        taskFromDb.setTaskId(taskSortKey);
-        taskFromDb.setTitle("Testando task");
-        taskFromDb.setDescription("Este é um teste");
-        List<Task> tasksFromRepository = List.of(taskFromDb);
+        taskFromDb.setUserId(Constants.USER_PREFIX + cognitoUser);
+        taskFromDb.setTaskId(Constants.TASK_PREFIX + taskId);
+        taskFromDb.setTitle("Tafera teste");
+        taskFromDb.setDescription("Tarefa de teste");
 
-        when(taskRepository.listTasks(userPartitionKey)).thenReturn(tasksFromRepository);
-
-        List<TaskResponseDTO> expectedResponseDtos = tasksFromRepository.stream()
-                .map(TaskMapper::toResponseDTO)
-                .toList();
+        when(taskRepository.findTaskById(cognitoUser, taskId)).thenReturn(Optional.of(taskFromDb));
 
         APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
         APIGatewayProxyRequestEvent.ProxyRequestContext requestContext = new APIGatewayProxyRequestEvent.ProxyRequestContext();
-        Map<String, Object> authorizer = Map.of("claims", Map.of("sub", cognitoUserId));
-        requestContext.setAuthorizer(authorizer);
+        Map<String, Object> authorized = Map.of("claims", Map.of("sub", cognitoUser));
+        requestContext.setAuthorizer(authorized);
         request.setRequestContext(requestContext);
+        request.setPathParameters(Map.of("taskId", taskId));
+        request.setBody(gson.toJson(taskFromDb));
 
-
-        APIGatewayProxyResponseEvent response = listTasksHandler.handleRequest(request, context);
+        APIGatewayProxyResponseEvent response = getTaskByIdHandler.handleRequest(request,context);
         assertEquals(200, response.getStatusCode());
-        assertEquals(gson.toJson(expectedResponseDtos), response.getBody());
 
+        TaskResponseDTO responseDTO = TaskMapper.toResponseDTO(taskFromDb);
+        assertEquals(gson.toJson(responseDTO), response.getBody());
 
-        verify(taskRepository).listTasks(userPartitionKey);
-
+        verify(taskRepository).findTaskById(cognitoUser, taskId);
     }
-
 }

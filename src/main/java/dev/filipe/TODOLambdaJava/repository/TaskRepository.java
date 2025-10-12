@@ -1,6 +1,7 @@
 package dev.filipe.TODOLambdaJava.repository;
 
-import dev.filipe.TODOLambdaJava.Model.Task;
+import dev.filipe.TODOLambdaJava.model.Task;
+import dev.filipe.TODOLambdaJava.model.constants.Constants;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
@@ -23,6 +24,9 @@ public class TaskRepository {
     }
 
     public Optional<Task> findTaskById(String userId, String taskId) {
+        String userPK = Constants.USER_PREFIX + userId;
+        String userSK = Constants.TASK_PREFIX + taskId;
+
         Key key = Key.builder()
                 .partitionValue(userId)
                 .sortValue(taskId)

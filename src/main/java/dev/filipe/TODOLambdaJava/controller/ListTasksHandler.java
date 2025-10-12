@@ -1,23 +1,22 @@
-package dev.filipe.TODOLambdaJava.Controller;
+package dev.filipe.TODOLambdaJava.controller;
 
 import com.google.gson.JsonSyntaxException;
-import dev.filipe.TODOLambdaJava.Model.Task;
+import dev.filipe.TODOLambdaJava.config.DependencyFactory;
+import dev.filipe.TODOLambdaJava.model.constants.Constants;
+import dev.filipe.TODOLambdaJava.model.Task;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
+import dev.filipe.TODOLambdaJava.dto.TaskResponseDTO;
+import dev.filipe.TODOLambdaJava.dto.mapper.TaskMapper;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import dev.filipe.TODOLambdaJava.util.AuthUtils;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -26,12 +25,7 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
     private final TaskRepository taskRepository;
 
     public ListTasksHandler() {
-        DynamoDbClient dynamoDbClient = DynamoDbClient.builder().build();
-        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
-        String TABLE_NAME = System.getenv("TASKS_TABLE");
-        DynamoDbTable<Task> taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
-
-        this.taskRepository = new TaskRepository(taskTable);
+        this.taskRepository = DependencyFactory.getTaskRepository();
     }
 
     // Construtor para injeção de dependência em testes
@@ -53,10 +47,13 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
                 return ApiResponseBuilder.createErrorResponse(401, "Não autorizado.");
             }
             String userId = userIdOpt.get();
-            String userPK = "USER#" + userId;
+            String userPK = Constants.USER_PREFIX + userId;
             List<Task> tasks = taskRepository.listTasks(userPK);
 
-            return ApiResponseBuilder.createSuccessResponse(200, tasks);
+            List<TaskResponseDTO> responseDTOs = tasks.stream()
+                    .map(TaskMapper::toResponseDTO)
+                    .toList();
+            return ApiResponseBuilder.createSuccessResponse(200, responseDTOs);
         } catch (JsonSyntaxException e){
             logger.log("Erro ao construir resposta JSON: " + e.getMessage());
             return ApiResponseBuilder.createErrorResponse(400, "Requisição inválida");
