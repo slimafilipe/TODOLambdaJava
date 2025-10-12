@@ -137,7 +137,7 @@ module "ListTasksLambda" {
 module "UpdateTaskLambda" {
   source = "./tf_modules/lambda"
   function_name = "update-task-lambda-java"
-  handler = "dev.filipe.TODOLambdaJava.Controller.UpdateTaskHandler::handleRequest"
+  handler = "dev.filipe.TODOLambdaJava.controller.UpdateTaskHandler::handleRequest"
   runtime = "java21"
   source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
   memory_size = 1024
@@ -234,7 +234,7 @@ resource "aws_api_gateway_method" "get_tasks_by_id_method" {
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
 }
 resource "aws_api_gateway_integration" "get_task_by_id_integration" {
-  http_method = aws_api_gateway_method.get_tasks_method.http_method
+  http_method = aws_api_gateway_method.get_tasks_by_id_method.http_method
   integration_http_method = "POST"
   resource_id = aws_api_gateway_resource.task_id_resource.id
   rest_api_id = aws_api_gateway_rest_api.task_api.id
@@ -322,11 +322,11 @@ resource "aws_lambda_permission" "allow_api_gateway_list" {
 }
 
 resource "aws_lambda_permission" "allow_api_gateway_get_by_id" {
-  statement_id  = "AllowAPIGatewayInvokeList"
+  statement_id  = "AllowAPIGatewayInvokeGetById"
   action        = "lambda:InvokeFunction"
   function_name = module.GetTaskByIdLambda.lambda_function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.get_tasks_by_id_method.http_method}${aws_api_gateway_resource.tasks_resource.path}"
+  source_arn    = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.get_tasks_by_id_method.http_method}${aws_api_gateway_resource.task_id_resource.path}"
 }
 
 
