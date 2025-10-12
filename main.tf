@@ -321,7 +321,7 @@ resource "aws_lambda_permission" "allow_api_gateway_list" {
   source_arn    = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.get_tasks_method.http_method}${aws_api_gateway_resource.tasks_resource.path}"
 }
 
-resource "aws_lambda_permission" "allow_api_gateway_list" {
+resource "aws_lambda_permission" "allow_api_gateway_get_by_id" {
   statement_id  = "AllowAPIGatewayInvokeList"
   action        = "lambda:InvokeFunction"
   function_name = module.GetTaskByIdLambda.lambda_function_name
