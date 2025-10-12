@@ -50,7 +50,7 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             if (pathParameters == null || !pathParameters.containsKey("taskId")){
               return  ApiResponseBuilder.createErrorResponse(400, "taskId obrigatório");
             }
-            String taskId = input.getPathParameters().get("taskId");
+            String taskId = Constants.TASK_PREFIX + input.getPathParameters().get("taskId");
 
             Optional<Task> existingTaskOptional = taskRepository.findTaskById(userPK, taskId);
             if (existingTaskOptional.isEmpty()){
