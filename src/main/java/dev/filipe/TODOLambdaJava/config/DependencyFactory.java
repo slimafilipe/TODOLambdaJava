@@ -1,13 +1,13 @@
-package dev.filipe.TODOLambdaJava.Config;
+package dev.filipe.TODOLambdaJava.config;
 
-import dev.filipe.TODOLambdaJava.Model.Task;
+import dev.filipe.TODOLambdaJava.model.Task;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-public class DependecyFactory {
+public class DenpendecyFactory {
     private static final TaskRepository taskRepositoryInstance;
 
     static {
@@ -18,7 +18,7 @@ public class DependecyFactory {
         taskRepositoryInstance = new TaskRepository(taskTable);
     }
 
-    private DependecyFactory() {}
+    private DenpendecyFactory() {}
 
     public static TaskRepository getTaskRepository(){
         return taskRepositoryInstance;
