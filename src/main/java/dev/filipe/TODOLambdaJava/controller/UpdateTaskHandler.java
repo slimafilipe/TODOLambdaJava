@@ -44,15 +44,14 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
                 return ApiResponseBuilder.createErrorResponse(401, "Não autorizado.");
             }
             String userId = userIdOpt.get();
-            String userPK = Constants.USER_PREFIX + userId;
 
             Map<String, String> pathParameters = input.getPathParameters();
             if (pathParameters == null || !pathParameters.containsKey("taskId")){
               return  ApiResponseBuilder.createErrorResponse(400, "taskId obrigatório");
             }
-            String taskId = input.getPathParameters().get("taskId");
+            String taskId = pathParameters.get("taskId");
 
-            Optional<Task> existingTaskOptional = taskRepository.findTaskById(userPK, taskId);
+            Optional<Task> existingTaskOptional = taskRepository.findTaskById(userId, taskId);
             if (existingTaskOptional.isEmpty()){
                 return ApiResponseBuilder.createErrorResponse(400, "Tarefa não encontrada");
             }

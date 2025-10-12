@@ -56,12 +56,11 @@ public class UpdateTaskHandlerTest {
     void shouldReturn200WithListOfTaskForAuthenticatedUser(){
 
         String cognitoUserId = UUID.randomUUID().toString();
-        String userPartitionKey = "USER#" + cognitoUserId;
-        String taskSortKey = Constants.TASK_PREFIX + UUID.randomUUID().toString();
+        String taskId = UUID.randomUUID().toString();
 
         Task existingTask = new Task();
-        existingTask.setUserId(userPartitionKey);
-        existingTask.setTaskId(taskSortKey);
+        existingTask.setUserId(cognitoUserId);
+        existingTask.setTaskId(taskId);
         existingTask.setTitle("Task já existente");
         existingTask.setDescription("Este é um teste");
         existingTask.setCompleted(false);
@@ -72,14 +71,14 @@ public class UpdateTaskHandlerTest {
         updateTask.setCompleted(true);
 
        // when(taskRepository.findTaskById(anyString(), anyString())).thenReturn(Optional.empty());
-        when(taskRepository.findTaskById(userPartitionKey, taskSortKey)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.findTaskById(cognitoUserId, taskId)).thenReturn(Optional.of(existingTask));
 
         APIGatewayProxyRequestEvent request= new APIGatewayProxyRequestEvent();
         APIGatewayProxyRequestEvent.ProxyRequestContext requestContext = new APIGatewayProxyRequestEvent.ProxyRequestContext();
         Map<String, Object> authorizer = Map.of("claims", Map.of("sub", cognitoUserId));
         requestContext.setAuthorizer(authorizer);
         request.setRequestContext(requestContext);
-        request.setPathParameters(Map.of("taskId", taskSortKey));
+        request.setPathParameters(Map.of("taskId", taskId));
         request.setBody(gson.toJson(updateTask));
 
         APIGatewayProxyResponseEvent response = updateTaskHandler.handleRequest(request, context);
@@ -93,8 +92,8 @@ public class UpdateTaskHandlerTest {
         assertEquals("Novo corpo da tarefa", savedTask.getDescription());
         assertTrue(savedTask.isCompleted());
 
-        assertEquals(userPartitionKey, savedTask.getUserId());
-        assertEquals(taskSortKey, savedTask.getTaskId());
+        assertEquals(cognitoUserId, savedTask.getUserId());
+        assertEquals(taskId, savedTask.getTaskId());
     }
 
 }
