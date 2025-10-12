@@ -137,7 +137,7 @@ module "ListTasksLambda" {
 module "UpdateTaskLambda" {
   source = "./tf_modules/lambda"
   function_name = "update-task-lambda-java"
-  handler = "dev.filipe.TODOLambdaJava.Controller.cpdateTaskHandler::handleRequest"
+  handler = "dev.filipe.TODOLambdaJava.Controller.UpdateTaskHandler::handleRequest"
   runtime = "java21"
   source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
   memory_size = 1024
@@ -230,7 +230,7 @@ resource "aws_api_gateway_method" "get_tasks_by_id_method" {
   authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
   http_method   = "GET"
-  resource_id   = aws_api_gateway_resource.tasks_resource.id
+  resource_id   = aws_api_gateway_resource.task_id_resource.id
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
 }
 resource "aws_api_gateway_integration" "get_task_by_id_integration" {
@@ -239,7 +239,7 @@ resource "aws_api_gateway_integration" "get_task_by_id_integration" {
   resource_id = aws_api_gateway_resource.task_id_resource.id
   rest_api_id = aws_api_gateway_rest_api.task_api.id
   type        = "AWS_PROXY"
-  uri         = module.ListTasksLambda.lambda_function_invoke_arn
+  uri         = module.GetTaskByIdLambda.lambda_function_invoke_arn
 }
 
 resource "aws_api_gateway_method" "update_task_method" {
