@@ -5,24 +5,22 @@ import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
-import dev.filipe.TODOLambdaJava.Controller.CreateTaskHandler;
-import dev.filipe.TODOLambdaJava.Controller.ListTasksHandler;
-import dev.filipe.TODOLambdaJava.Model.Task;
+import dev.filipe.TODOLambdaJava.dto.TaskResponseDTO;
+import dev.filipe.TODOLambdaJava.dto.mapper.TaskMapper;
+import dev.filipe.TODOLambdaJava.model.Task;
+import dev.filipe.TODOLambdaJava.model.constants.Constants;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,9 +32,6 @@ public class ListTaskHandlerTest {
 
     @Mock
     private LambdaLogger logger;
-
-    @Mock
-    private DynamoDbTable<Task> taskTable;
 
     @Mock
     private TaskRepository taskRepository;
@@ -57,15 +52,20 @@ public class ListTaskHandlerTest {
     void shouldReturn200WithListOfTasksForAuthenticatedUser() {
 
         String cognitoUserId = UUID.randomUUID().toString();
-        String userPartitionKey = "USER#" + cognitoUserId;
+        String userPartitionKey = Constants.USER_PREFIX + cognitoUserId;
+        String taskSortKey = Constants.TASK_PREFIX + UUID.randomUUID().toString();
+        Task taskFromDb = new Task();
+        taskFromDb.setUserId(userPartitionKey);
+        taskFromDb.setTaskId(taskSortKey);
+        taskFromDb.setTitle("Testando task");
+        taskFromDb.setDescription("Este é um teste");
+        List<Task> tasksFromRepository = List.of(taskFromDb);
 
-        Task inputTask = new Task();
-        inputTask.setTitle("Testando task");
-        inputTask.setDescription("Este é um teste");
+        when(taskRepository.listTasks(userPartitionKey)).thenReturn(tasksFromRepository);
 
-        List<Task> listTasks = List.of(inputTask);
-
-        when(taskRepository.listTasks(userPartitionKey)).thenReturn(listTasks);
+        List<TaskResponseDTO> expectedResponseDtos = tasksFromRepository.stream()
+                .map(TaskMapper::toResponseDTO)
+                .toList();
 
         APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
         APIGatewayProxyRequestEvent.ProxyRequestContext requestContext = new APIGatewayProxyRequestEvent.ProxyRequestContext();
@@ -76,7 +76,7 @@ public class ListTaskHandlerTest {
 
         APIGatewayProxyResponseEvent response = listTasksHandler.handleRequest(request, context);
         assertEquals(200, response.getStatusCode());
-        assertEquals(gson.toJson(listTasks), response.getBody());
+        assertEquals(gson.toJson(expectedResponseDtos), response.getBody());
 
 
         verify(taskRepository).listTasks(userPartitionKey);

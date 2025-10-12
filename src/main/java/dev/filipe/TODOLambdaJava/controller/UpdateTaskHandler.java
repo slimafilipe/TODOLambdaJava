@@ -1,4 +1,4 @@
-package dev.filipe.TODOLambdaJava.Controller;
+package dev.filipe.TODOLambdaJava.controller;
 
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -6,14 +6,14 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import dev.filipe.TODOLambdaJava.Model.Task;
+import dev.filipe.TODOLambdaJava.config.DependencyFactory;
+import dev.filipe.TODOLambdaJava.model.constants.Constants;
+import dev.filipe.TODOLambdaJava.model.Task;
+import dev.filipe.TODOLambdaJava.dto.TaskResponseDTO;
+import dev.filipe.TODOLambdaJava.dto.mapper.TaskMapper;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import dev.filipe.TODOLambdaJava.util.AuthUtils;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.util.Map;
 import java.util.Optional;
@@ -25,11 +25,7 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
 
 
     public UpdateTaskHandler(){
-        DynamoDbClient dynamoDbClient = DynamoDbClient.builder().build();
-        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
-        String TABLE_NAME = System.getenv("TASKS_TABLE");
-        DynamoDbTable<Task> taskTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Task.class));
-        this.taskRepository = new TaskRepository(taskTable);
+        this.taskRepository = DependencyFactory.getTaskRepository();
     }
 
     public UpdateTaskHandler(TaskRepository taskRepository) {
@@ -48,7 +44,7 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
                 return ApiResponseBuilder.createErrorResponse(401, "Não autorizado.");
             }
             String userId = userIdOpt.get();
-            String userPK = "USER#" + userId;
+            String userPK = Constants.USER_PREFIX + userId;
 
             Map<String, String> pathParameters = input.getPathParameters();
             if (pathParameters == null || !pathParameters.containsKey("taskId")){
@@ -68,9 +64,11 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             existingTask.setDescription(updateTaskData.getDescription());
             existingTask.setCompleted(updateTaskData.isCompleted());
             taskRepository.save(existingTask);
+
+            TaskResponseDTO responseDTO = TaskMapper.toResponseDTO(existingTask);
             logger.log("Tarefa atualizada com sucesso " + taskId);
 
-            return ApiResponseBuilder.createSuccessResponse(200, existingTask);
+            return ApiResponseBuilder.createSuccessResponse(200, responseDTO);
         }catch (JsonSyntaxException e){
             logger.log("Erro ao processar requisão" +  e.getMessage());
             return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição inválido");

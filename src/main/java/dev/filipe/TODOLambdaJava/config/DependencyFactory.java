@@ -7,7 +7,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-public class DenpendecyFactory {
+public class DependencyFactory {
     private static final TaskRepository taskRepositoryInstance;
 
     static {
@@ -18,7 +18,7 @@ public class DenpendecyFactory {
         taskRepositoryInstance = new TaskRepository(taskTable);
     }
 
-    private DenpendecyFactory() {}
+    private DependencyFactory() {}
 
     public static TaskRepository getTaskRepository(){
         return taskRepositoryInstance;

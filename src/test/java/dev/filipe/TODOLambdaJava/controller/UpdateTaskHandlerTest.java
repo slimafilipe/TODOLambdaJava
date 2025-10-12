@@ -5,8 +5,8 @@ import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
-import dev.filipe.TODOLambdaJava.Controller.UpdateTaskHandler;
-import dev.filipe.TODOLambdaJava.Model.Task;
+import dev.filipe.TODOLambdaJava.model.Task;
+import dev.filipe.TODOLambdaJava.model.constants.Constants;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,8 +57,7 @@ public class UpdateTaskHandlerTest {
 
         String cognitoUserId = UUID.randomUUID().toString();
         String userPartitionKey = "USER#" + cognitoUserId;
-        String taskId = UUID.randomUUID().toString();
-        String taskSortKey = "TASK#" + taskId;
+        String taskSortKey = Constants.TASK_PREFIX + UUID.randomUUID().toString();
 
         Task existingTask = new Task();
         existingTask.setUserId(userPartitionKey);
@@ -72,7 +71,7 @@ public class UpdateTaskHandlerTest {
         updateTask.setDescription("Novo corpo da tarefa");
         updateTask.setCompleted(true);
 
-        when(taskRepository.findTaskById(anyString(), anyString())).thenReturn(Optional.empty());
+       // when(taskRepository.findTaskById(anyString(), anyString())).thenReturn(Optional.empty());
         when(taskRepository.findTaskById(userPartitionKey, taskSortKey)).thenReturn(Optional.of(existingTask));
 
         APIGatewayProxyRequestEvent request= new APIGatewayProxyRequestEvent();

@@ -1,7 +1,8 @@
-package dev.filipe.TODOLambdaJava.Controller;
+package dev.filipe.TODOLambdaJava.controller;
 
-import dev.filipe.TODOLambdaJava.Config.DependecyFactory;
-import dev.filipe.TODOLambdaJava.Model.Task;
+import dev.filipe.TODOLambdaJava.config.DependencyFactory;
+import dev.filipe.TODOLambdaJava.model.constants.Constants;
+import dev.filipe.TODOLambdaJava.model.Task;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -11,16 +12,13 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+import dev.filipe.TODOLambdaJava.dto.TaskResponseDTO;
+import dev.filipe.TODOLambdaJava.dto.mapper.TaskMapper;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import dev.filipe.TODOLambdaJava.util.AuthUtils;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,7 +31,7 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
     private final TaskRepository taskRepository;
 
     public CreateTaskHandler(){
-        this.taskRepository = DependecyFactory.getTaskRepository();
+        this.taskRepository = DependencyFactory.getTaskRepository();
     }
 
     // Construtor para injeção de dependência em testes
@@ -59,15 +57,16 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
             }
 
             Task task = gson.fromJson(requestBody, Task.class);
-            task.setUserId("USER#" + userId );
-            task.setTaskId("TASK#" + UUID.randomUUID().toString());
+            task.setUserId(Constants.USER_PREFIX + userId );
+            task.setTaskId(Constants.TASK_PREFIX + UUID.randomUUID().toString());
             task.setCreatedAt(Instant.now().toString());
             task.setCompleted(false);
 
             taskRepository.save(task);
             logger.log("Tarefa criada com sucesso com ID: " + task.getTaskId());
+            TaskResponseDTO responseDTO = TaskMapper.toResponseDTO(task);
 
-            return ApiResponseBuilder.createSuccessResponse(201, task);
+            return ApiResponseBuilder.createSuccessResponse(201, responseDTO);
         } catch (JsonSyntaxException e) {
             logger.log("Erro ao processar JSON: " + e.getMessage());
             return ApiResponseBuilder.createErrorResponse(400, "Corpo da requisição inválido");

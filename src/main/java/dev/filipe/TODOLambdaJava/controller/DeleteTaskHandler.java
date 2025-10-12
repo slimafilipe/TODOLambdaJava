@@ -1,11 +1,12 @@
-package dev.filipe.TODOLambdaJava.Controller;
+package dev.filipe.TODOLambdaJava.controller;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import dev.filipe.TODOLambdaJava.Config.DependecyFactory;
-import dev.filipe.TODOLambdaJava.Model.Task;
+import dev.filipe.TODOLambdaJava.config.DependencyFactory;
+import dev.filipe.TODOLambdaJava.model.constants.Constants;
+import dev.filipe.TODOLambdaJava.model.Task;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import dev.filipe.TODOLambdaJava.util.AuthUtils;
@@ -17,7 +18,7 @@ public class DeleteTaskHandler implements RequestHandler<APIGatewayProxyRequestE
     private final TaskRepository taskRepository;
 
     public DeleteTaskHandler() {
-        this.taskRepository = DependecyFactory.getTaskRepository();
+        this.taskRepository = DependencyFactory.getTaskRepository();
     }
     public DeleteTaskHandler(TaskRepository taskRepository){
         this.taskRepository = taskRepository;
@@ -34,7 +35,7 @@ public class DeleteTaskHandler implements RequestHandler<APIGatewayProxyRequestE
                 return ApiResponseBuilder.createErrorResponse(401, "Não autorizado.");
             }
             String userId = userIdOpt.get();
-            String userPK = "USER#" + userId;
+            String userPK = Constants.USER_PREFIX + userId;
 
 
             Map<String, String> pathParameters = input.getPathParameters();
