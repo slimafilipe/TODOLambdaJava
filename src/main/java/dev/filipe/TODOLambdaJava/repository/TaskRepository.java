@@ -25,11 +25,11 @@ public class TaskRepository {
 
     public Optional<Task> findTaskById(String userId, String taskId) {
         String userPK = Constants.USER_PREFIX + userId;
-        String userSK = Constants.TASK_PREFIX + taskId;
+        String taskSK = Constants.TASK_PREFIX + taskId;
 
         Key key = Key.builder()
-                .partitionValue(userId)
-                .sortValue(taskId)
+                .partitionValue(userPK)
+                .sortValue(taskSK)
                 .build();
         return Optional.ofNullable(taskTable.getItem(key));
     }
