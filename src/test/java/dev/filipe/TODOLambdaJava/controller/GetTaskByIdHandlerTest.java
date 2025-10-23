@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
+import dev.filipe.TODOLambdaJava.controller.task.GetTaskByIdHandler;
 import dev.filipe.TODOLambdaJava.dto.TaskResponseDTO;
 import dev.filipe.TODOLambdaJava.dto.mapper.TaskMapper;
 import dev.filipe.TODOLambdaJava.model.Task;
@@ -17,11 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;

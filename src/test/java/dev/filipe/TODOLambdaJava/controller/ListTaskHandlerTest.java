@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
+import dev.filipe.TODOLambdaJava.controller.task.ListTasksHandler;
 import dev.filipe.TODOLambdaJava.dto.TaskResponseDTO;
 import dev.filipe.TODOLambdaJava.dto.mapper.TaskMapper;
 import dev.filipe.TODOLambdaJava.model.Task;

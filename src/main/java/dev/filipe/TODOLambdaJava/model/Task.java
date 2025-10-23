@@ -11,7 +11,7 @@ public class Task {
     private String title;
     private String description;
     private boolean completed;
-    private String CreatedAt;
+    private String createdAt;
 
 
     public Task() {
@@ -24,7 +24,7 @@ public class Task {
         this.title = title;
         this.description = description;
         this.completed = completed;
-        CreatedAt = createdAt;
+        this.createdAt = createdAt;
     }
 
     @DynamoDbPartitionKey
@@ -69,10 +69,10 @@ public class Task {
     }
 
     public String getCreatedAt() {
-        return CreatedAt;
+        return createdAt;
     }
 
     public void setCreatedAt(String createdAt) {
-        CreatedAt = createdAt;
+        this.createdAt = createdAt;
     }
 }

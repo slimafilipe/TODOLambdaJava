@@ -1,5 +1,6 @@
 package dev.filipe.TODOLambdaJava.controller;
 
+import dev.filipe.TODOLambdaJava.controller.task.CreateTaskHandler;
 import dev.filipe.TODOLambdaJava.model.Task;
 
 import com.amazonaws.services.lambda.runtime.Context;
