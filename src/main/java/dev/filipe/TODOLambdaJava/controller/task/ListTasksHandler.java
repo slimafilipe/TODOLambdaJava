@@ -1,4 +1,4 @@
-package dev.filipe.TODOLambdaJava.controller;
+package dev.filipe.TODOLambdaJava.controller.task;
 
 import com.google.gson.JsonSyntaxException;
 import dev.filipe.TODOLambdaJava.config.DependencyFactory;
