@@ -1,5 +1,6 @@
 package dev.filipe.TODOLambdaJava.model;
 
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
@@ -29,6 +30,7 @@ public class TaskList {
     }
 
     @DynamoDbSortKey
+    @DynamoDbAttribute("taskId")
     public String getTaskListId() {
         return taskListId;
     }
