@@ -9,11 +9,14 @@ public class TaskMapper {
     public TaskMapper() {}
 
     public static TaskResponseDTO toResponseDTO(Task task){
-        if (task == null){
+        if (task == null || task.getTaskId() == null){
             return null;
         }
+        String fullSK = task.getTaskId();
+        String cleanTaskId = fullSK.substring(fullSK.lastIndexOf("#") + 1);
+
         return new TaskResponseDTO(
-                task.getTaskId().replace(Constants.TASK_PREFIX, ""),
+                cleanTaskId,
                 task.getTitle(),
                 task.getDescription(),
                 task.isCompleted(),

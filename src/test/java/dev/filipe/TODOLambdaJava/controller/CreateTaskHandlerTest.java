@@ -7,6 +7,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import dev.filipe.TODOLambdaJava.model.constants.Constants;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import org.mockito.ArgumentCaptor;
 
@@ -55,6 +56,8 @@ public class CreateTaskHandlerTest {
     @Test
     void shoudCreateTaskSucessfully() {
         String cognitoUserId = UUID.randomUUID().toString();
+        String listId = UUID.randomUUID().toString();
+
 
         Task inputTask = new Task();
         inputTask.setTitle("Testando task");
@@ -67,7 +70,7 @@ public class CreateTaskHandlerTest {
         Map<String, Object> authorizer = Map.of("claims", Map.of("sub", cognitoUserId));
         requestContext.setAuthorizer(authorizer);
         request.setRequestContext(requestContext);
-
+        request.setPathParameters(Map.of("listId", listId));
 
         APIGatewayProxyResponseEvent expectedResponse = createTaskHandler.handleRequest(request, context);
         assertEquals(201, expectedResponse.getStatusCode());
@@ -79,7 +82,7 @@ public class CreateTaskHandlerTest {
         assertEquals("Testando task", savedTask.getTitle());
         assertEquals("Este é um teste", savedTask.getDescription());
         assertEquals("USER#" + cognitoUserId, savedTask.getUserId());
-        assertTrue(savedTask.getTaskId().startsWith("TASK#"));
+        assertTrue(savedTask.getTaskId().startsWith("LIST#"));
         assertNotNull(savedTask.getCreatedAt());
         assertFalse(savedTask.isCompleted());
     }

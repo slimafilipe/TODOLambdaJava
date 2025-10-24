@@ -52,7 +52,7 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
 
             Optional<Task> existingTaskOptional = taskRepository.findTaskById(userId, taskId);
             if (existingTaskOptional.isEmpty()){
-                return ApiResponseBuilder.createErrorResponse(400, "Tarefa não encontrada");
+                return ApiResponseBuilder.createErrorResponse(404, "Tarefa não encontrada");
             }
             Task existingTask = existingTaskOptional.get();
 

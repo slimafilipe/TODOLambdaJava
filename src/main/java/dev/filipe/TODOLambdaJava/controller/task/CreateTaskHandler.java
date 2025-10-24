@@ -53,6 +53,7 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
 
             Map<String, String> pathParameters = input.getPathParameters();
             String listId = pathParameters.get("listId");
+            String listSK = Constants.LIST_PREFIX + listId;
 
             String requestBody = input.getBody();
             if (requestBody == null || requestBody.isEmpty()) {
@@ -62,7 +63,7 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
 
             Task task = gson.fromJson(requestBody, Task.class);
             task.setUserId(Constants.USER_PREFIX + userId );
-            task.setTaskId(Constants.TASK_PREFIX + UUID.randomUUID().toString());
+            task.setTaskId(listSK + "#" + Constants.TASK_PREFIX + UUID.randomUUID().toString());
             task.setCreatedAt(Instant.now().toString());
             task.setCompleted(false);
 

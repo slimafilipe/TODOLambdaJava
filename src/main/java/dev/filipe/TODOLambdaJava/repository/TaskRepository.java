@@ -17,10 +17,19 @@ public class TaskRepository {
         this.taskTable = taskTable;
     }
 
-    public  List<Task> listTasks(String userId) {
-        QueryConditional conditional =  QueryConditional.keyEqualTo(Key.builder().partitionValue(userId).build());
+    public  List<Task> listTasks(String userId, String listId) {
+        String userPK = Constants.USER_PREFIX + userId;
+        String taskListSK = Constants.LIST_PREFIX + listId + "#";
+        QueryConditional conditional =  QueryConditional.sortBeginsWith(
+                Key.builder()
+                        .partitionValue(userPK)
+                        .sortValue(taskListSK)
+                        .build());
 
-        return taskTable.query(conditional).items().stream().collect(Collectors.toList());
+        return taskTable.query(conditional)
+                .items()
+                .stream()
+                .collect(Collectors.toList());
     }
 
     public Optional<Task> findTaskById(String userId, String taskId) {

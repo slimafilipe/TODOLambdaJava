@@ -9,6 +9,7 @@ import dev.filipe.TODOLambdaJava.controller.task.ListTasksHandler;
 import dev.filipe.TODOLambdaJava.dto.TaskResponseDTO;
 import dev.filipe.TODOLambdaJava.dto.mapper.TaskMapper;
 import dev.filipe.TODOLambdaJava.model.Task;
+import dev.filipe.TODOLambdaJava.model.TaskList;
 import dev.filipe.TODOLambdaJava.model.constants.Constants;
 import dev.filipe.TODOLambdaJava.repository.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,8 +54,11 @@ public class ListTaskHandlerTest {
     void shouldReturn200WithListOfTasksForAuthenticatedUser() {
 
         String cognitoUserId = UUID.randomUUID().toString();
+        String listId = UUID.randomUUID().toString();
         String userPartitionKey = Constants.USER_PREFIX + cognitoUserId;
-        String taskSortKey = Constants.TASK_PREFIX + UUID.randomUUID().toString();
+        String uniqueTaskId =  UUID.randomUUID().toString();
+        String taskSortKey = Constants.LIST_PREFIX + listId + "#" + Constants.TASK_PREFIX + uniqueTaskId;
+
         Task taskFromDb = new Task();
         taskFromDb.setUserId(userPartitionKey);
         taskFromDb.setTaskId(taskSortKey);
@@ -62,7 +66,7 @@ public class ListTaskHandlerTest {
         taskFromDb.setDescription("Este é um teste");
         List<Task> tasksFromRepository = List.of(taskFromDb);
 
-        when(taskRepository.listTasks(userPartitionKey)).thenReturn(tasksFromRepository);
+        when(taskRepository.listTasks(cognitoUserId, listId)).thenReturn(tasksFromRepository);
 
         List<TaskResponseDTO> expectedResponseDtos = tasksFromRepository.stream()
                 .map(TaskMapper::toResponseDTO)
@@ -73,6 +77,7 @@ public class ListTaskHandlerTest {
         Map<String, Object> authorizer = Map.of("claims", Map.of("sub", cognitoUserId));
         requestContext.setAuthorizer(authorizer);
         request.setRequestContext(requestContext);
+        request.setPathParameters(Map.of("listId", listId));
 
 
         APIGatewayProxyResponseEvent response = listTasksHandler.handleRequest(request, context);
@@ -80,7 +85,7 @@ public class ListTaskHandlerTest {
         assertEquals(gson.toJson(expectedResponseDtos), response.getBody());
 
 
-        verify(taskRepository).listTasks(userPartitionKey);
+        verify(taskRepository).listTasks(cognitoUserId, listId);
 
     }
 

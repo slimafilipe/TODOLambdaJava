@@ -17,6 +17,7 @@ import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import dev.filipe.TODOLambdaJava.util.AuthUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -40,15 +41,15 @@ public class ListTasksHandler implements RequestHandler<APIGatewayProxyRequestEv
         var logger = context.getLogger();
         logger.log("Recebida requisão para listar tarefas: " + input.getBody());
         try {
-           // Map<String, String> querystringParameters = input.getQueryStringParameters();
-           // String userId = querystringParameters.get("userId");
+
             Optional<String> userIdOpt = AuthUtils.getUserId(input);
             if (userIdOpt.isEmpty()){
                 return ApiResponseBuilder.createErrorResponse(401, "Não autorizado.");
             }
             String userId = userIdOpt.get();
-            String userPK = Constants.USER_PREFIX + userId;
-            List<Task> tasks = taskRepository.listTasks(userPK);
+            Map<String, String> pathParameters = input.getPathParameters();
+            String listId = pathParameters.get("listId");
+            List<Task> tasks = taskRepository.listTasks(userId, listId);
 
             List<TaskResponseDTO> responseDTOs = tasks.stream()
                     .map(TaskMapper::toResponseDTO)
