@@ -1,4 +1,4 @@
-package dev.filipe.TODOLambdaJava.controller;
+package dev.filipe.TODOLambdaJava.controller.task;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;

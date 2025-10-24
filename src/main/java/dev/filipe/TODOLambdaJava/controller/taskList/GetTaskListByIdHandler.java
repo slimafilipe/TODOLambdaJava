@@ -1,0 +1,57 @@
+package dev.filipe.TODOLambdaJava.controller.taskList;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import dev.filipe.TODOLambdaJava.config.DependencyFactory;
+import dev.filipe.TODOLambdaJava.dto.TaskListResponseDTO;
+import dev.filipe.TODOLambdaJava.dto.mapper.TaskListMapper;
+import dev.filipe.TODOLambdaJava.model.TaskList;
+import dev.filipe.TODOLambdaJava.repository.TaskListRepository;
+import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
+import dev.filipe.TODOLambdaJava.util.AuthUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+public class GetTaskListByIdHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+    private final TaskListRepository taskListRepository;
+
+    GetTaskListByIdHandler(){this.taskListRepository = DependencyFactory.getTaskListRepository();}
+    GetTaskListByIdHandler(TaskListRepository taskListRepository){this.taskListRepository = taskListRepository;}
+
+
+    @Override
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
+        var logger = context.getLogger();
+        logger.log("Requisição recebida para buscar lista por id");
+
+        try {
+            Optional<String> userIdOpt = AuthUtils.getUserId(input);
+            if (userIdOpt.isEmpty()){
+                return ApiResponseBuilder.createErrorResponse(401, "Não autorizado");
+            }
+            String userId = userIdOpt.get();
+
+            Map<String, String> pathParameters = input.getPathParameters();
+            if (pathParameters.isEmpty() || !pathParameters.containsKey("listId")){
+                return ApiResponseBuilder.createErrorResponse(400, "listId obrigatório!");
+            }
+            String listId = pathParameters.get("listId");
+
+            Optional<TaskList> existingTaskListOptional = taskListRepository.findTaskListById(userId, listId);
+            if (existingTaskListOptional.isEmpty()){
+                return ApiResponseBuilder.createErrorResponse(400, "Lista não encontrada!");
+            }
+            TaskListResponseDTO responseDTO = TaskListMapper.responseDTO(existingTaskListOptional.get());
+
+            return ApiResponseBuilder.createSuccessResponse(200, responseDTO);
+
+        }catch (Exception e){
+            logger.log("Erro no servidor interno" + e.getMessage());
+            return ApiResponseBuilder.createErrorResponse(500, "Erro no servidor interno");
+        }
+    }
+}

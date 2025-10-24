@@ -1,4 +1,4 @@
-package dev.filipe.TODOLambdaJava.controller;
+package dev.filipe.TODOLambdaJava.controller.task;
 
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -7,7 +7,6 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import dev.filipe.TODOLambdaJava.config.DependencyFactory;
-import dev.filipe.TODOLambdaJava.model.constants.Constants;
 import dev.filipe.TODOLambdaJava.model.Task;
 import dev.filipe.TODOLambdaJava.dto.TaskResponseDTO;
 import dev.filipe.TODOLambdaJava.dto.mapper.TaskMapper;
@@ -53,7 +52,7 @@ public class UpdateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
 
             Optional<Task> existingTaskOptional = taskRepository.findTaskById(userId, taskId);
             if (existingTaskOptional.isEmpty()){
-                return ApiResponseBuilder.createErrorResponse(400, "Tarefa não encontrada");
+                return ApiResponseBuilder.createErrorResponse(404, "Tarefa não encontrada");
             }
             Task existingTask = existingTaskOptional.get();
 

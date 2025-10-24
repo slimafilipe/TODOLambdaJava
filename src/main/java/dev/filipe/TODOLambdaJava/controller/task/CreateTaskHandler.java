@@ -1,4 +1,4 @@
-package dev.filipe.TODOLambdaJava.controller;
+package dev.filipe.TODOLambdaJava.controller.task;
 
 import dev.filipe.TODOLambdaJava.config.DependencyFactory;
 import dev.filipe.TODOLambdaJava.model.constants.Constants;
@@ -19,6 +19,7 @@ import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import dev.filipe.TODOLambdaJava.util.AuthUtils;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,9 +47,13 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
         try {
             Optional<String> userIdOpt = AuthUtils.getUserId(input);
             if (userIdOpt.isEmpty()){
-                return ApiResponseBuilder.createErrorResponse(401, "Não encontrado.");
+                return ApiResponseBuilder.createErrorResponse(401, "Não autorizado.");
             }
             String userId = userIdOpt.get();
+
+            Map<String, String> pathParameters = input.getPathParameters();
+            String listId = pathParameters.get("listId");
+            String listSK = Constants.LIST_PREFIX + listId;
 
             String requestBody = input.getBody();
             if (requestBody == null || requestBody.isEmpty()) {
@@ -58,7 +63,7 @@ public class CreateTaskHandler implements RequestHandler<APIGatewayProxyRequestE
 
             Task task = gson.fromJson(requestBody, Task.class);
             task.setUserId(Constants.USER_PREFIX + userId );
-            task.setTaskId(Constants.TASK_PREFIX + UUID.randomUUID().toString());
+            task.setTaskId(listSK + "#" + Constants.TASK_PREFIX + UUID.randomUUID().toString());
             task.setCreatedAt(Instant.now().toString());
             task.setCompleted(false);
 
