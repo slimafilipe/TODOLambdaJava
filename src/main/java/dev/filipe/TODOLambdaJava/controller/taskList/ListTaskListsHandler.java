@@ -22,9 +22,9 @@ public class ListTaskListsHandler implements RequestHandler<APIGatewayProxyReque
     private final Gson gson = new Gson();
     private final TaskListRepository taskListRepository;
 
-    ListTaskListsHandler(){this.taskListRepository = DependencyFactory.getTaskListRepository();}
+    public ListTaskListsHandler(){this.taskListRepository = DependencyFactory.getTaskListRepository();}
 
-    ListTaskListsHandler(TaskListRepository taskListRepository){this.taskListRepository = taskListRepository;}
+    public ListTaskListsHandler(TaskListRepository taskListRepository){this.taskListRepository = taskListRepository;}
 
 
     @Override
