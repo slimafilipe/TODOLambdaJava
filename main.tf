@@ -247,6 +247,7 @@ module "GetTaskByIdLambda" {
 
 resource "aws_api_gateway_rest_api" "task_api" {
   name = "APITASKS"
+  description = "API para Tasks e TaskLists - Atualizado em ${timestamp()}"
 }
 resource "aws_api_gateway_resource" "lists_resource" {
   parent_id   = aws_api_gateway_rest_api.task_api.root_resource_id
