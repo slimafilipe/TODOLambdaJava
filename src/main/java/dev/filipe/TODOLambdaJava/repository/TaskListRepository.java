@@ -31,18 +31,11 @@ public class TaskListRepository {
                         .sortValue(Constants.LIST_PREFIX)
                         .build());
 
-        Expression filterExpression = Expression.builder()
-                .expression("NOT contains(taskId, :taskMarker)")
-                .expressionValues(Map.of(":taskMarker", AttributeValue.builder().s("#" + Constants.TASK_PREFIX).build()))
-                .build();
-        QueryEnhancedRequest queryRequest = QueryEnhancedRequest.builder()
-                .queryConditional(conditional)
-                .filterExpression(filterExpression)
-                .build();
 
-        return taskListTable.query(queryRequest)
+        return taskListTable.query(conditional)
                 .items()
                 .stream()
+                .filter(taskList -> taskList.getTaskListId() != null && !taskList.getTaskListId().contains("#" + Constants.TASK_PREFIX))
                 .collect(Collectors.toList());
     }
 
