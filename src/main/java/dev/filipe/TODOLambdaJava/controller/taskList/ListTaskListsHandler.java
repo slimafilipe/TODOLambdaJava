@@ -38,8 +38,7 @@ public class ListTaskListsHandler implements RequestHandler<APIGatewayProxyReque
                 return ApiResponseBuilder.createErrorResponse(401, "Não autorizado");
             }
             String userId = userIdOpt.get();
-            String userPK = Constants.USER_PREFIX + userId;
-            List<TaskList> taskList = taskListRepository.listTaskLists(userPK);
+            List<TaskList> taskList = taskListRepository.listTaskLists(userId);
 
             List<TaskListResponseDTO> responseDTOS = taskList.stream()
                     .map(TaskListMapper::responseDTO)
