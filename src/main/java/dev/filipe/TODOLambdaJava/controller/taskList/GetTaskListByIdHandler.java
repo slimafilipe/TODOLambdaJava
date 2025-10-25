@@ -19,8 +19,8 @@ import java.util.Optional;
 public class GetTaskListByIdHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     private final TaskListRepository taskListRepository;
 
-    GetTaskListByIdHandler(){this.taskListRepository = DependencyFactory.getTaskListRepository();}
-    GetTaskListByIdHandler(TaskListRepository taskListRepository){this.taskListRepository = taskListRepository;}
+    public GetTaskListByIdHandler(){this.taskListRepository = DependencyFactory.getTaskListRepository();}
+    public GetTaskListByIdHandler(TaskListRepository taskListRepository){this.taskListRepository = taskListRepository;}
 
 
     @Override
