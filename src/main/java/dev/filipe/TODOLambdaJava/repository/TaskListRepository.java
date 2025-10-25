@@ -4,10 +4,14 @@ import dev.filipe.TODOLambdaJava.model.Task;
 import dev.filipe.TODOLambdaJava.model.TaskList;
 import dev.filipe.TODOLambdaJava.model.constants.Constants;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -27,7 +31,16 @@ public class TaskListRepository {
                         .sortValue(Constants.LIST_PREFIX)
                         .build());
 
-        return taskListTable.query(conditional)
+        Expression filterExpression = Expression.builder()
+                .expression("NOT contains(taskId, :taskMarker)")
+                .expressionValues(Map.of(":taskMarker", AttributeValue.builder().s("#" + Constants.TASK_PREFIX).build()))
+                .build();
+        QueryEnhancedRequest queryRequest = QueryEnhancedRequest.builder()
+                .queryConditional(conditional)
+                .filterExpression(filterExpression)
+                .build();
+
+        return taskListTable.query(queryRequest)
                 .items()
                 .stream()
                 .collect(Collectors.toList());
