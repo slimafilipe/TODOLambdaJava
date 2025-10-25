@@ -43,7 +43,7 @@ public class ListTaskListsHandler implements RequestHandler<APIGatewayProxyReque
             List<TaskListResponseDTO> responseDTOS = taskList.stream()
                     .map(TaskListMapper::responseDTO)
                     .toList();
-            return ApiResponseBuilder.createSuccessResponse(201, responseDTOS);
+            return ApiResponseBuilder.createSuccessResponse(200, responseDTOS);
 
         }catch (JsonSyntaxException e){
             logger.log("Erro ao construir resposta JSON: " + e.getMessage());
