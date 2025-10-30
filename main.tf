@@ -585,6 +585,73 @@ resource "aws_iam_role_policy_attachment" "delete_lambda_dynamo_acess" {
   policy_arn = aws_iam_policy.lambda_dynamodb_write_policy.arn
 }
 
+resource "aws_iam_policy" "sqs_send_policy" {
+  name = "lambda-sqs-send-policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "sqs:SendMenssage",
+        Resource = aws_sqs_queue.report_dlq.arn
+      }
+    ]
+  })
+}
+resource "aws_iam_policy" "report_worker_policy" {
+  name = "lambda-report-worker-policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ],
+        Resource = aws_sqs_queue.report_queue.arn
+      },
+      {
+        Effect = "Allown",
+        Action = "s3:PutObject",
+        Recource = "${aws_s3_bucket.csv_bucket.arn}/*"
+      },
+      {
+        Effect = "Allow",
+        Action = "ses:SendEmail",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_sqs_queue" "report_dlq" {
+  name = "report-generation-dlq"
+  tags = {
+    Project = "TODOLambdaJava"
+  }
+}
+resource "aws_sqs_queue" "report_queue" {
+  name = "report-generation-queue"
+  redrive_policy = jsonencode({
+    deadLetterTargentArn = aws_sqs_queue.report_dlq
+    maxReceiveCount = 3
+  })
+  tags = {
+    Project = "TODOLambdaJava"
+  }
+}
+resource "aws_s3_bucket" "csv_bucket" {
+  bucket = "todo-lambda-csv-reports-filipe"
+  tags = {
+    Project = "TODOLambdaJava"
+  }
+}
+resource "aws_ses_email_identity" "sender_email" {
+  email = "limafilipe.coding@gmail.com"
+}
+
 
 output "nome_da_tabela" {
   value = module.todo_table.table_name
