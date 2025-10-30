@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
 import dev.filipe.TODOLambdaJava.config.DependencyFactory;
+import dev.filipe.TODOLambdaJava.dto.ReportRequestDTO;
 import dev.filipe.TODOLambdaJava.util.ApiResponseBuilder;
 import dev.filipe.TODOLambdaJava.util.AuthUtils;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -18,14 +19,22 @@ import java.util.Optional;
 
 public class StartReportHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     private final Gson gson = new Gson();
-    private final String QUEUE_REPORT = System.getenv("QUEUE_URL");
+    private final String queueReportUrl;
     private final SqsClient sqsClient;
 
-    public StartReportHandler(){this.sqsClient = DependencyFactory.getSqsClient();
+    public StartReportHandler(){
+        this.sqsClient = DependencyFactory.getSqsClient();
+        String queueUrlEnv = System.getenv("QUEUE_URL");
+        if (queueUrlEnv == null || queueUrlEnv.isEmpty()){
+            throw new IllegalStateException("Variável de ambiente QUEUE_URL não está definida.");
+        }
+        this.queueReportUrl = queueUrlEnv;
     }
-    public StartReportHandler(SqsClient sqsClient) {
+    public StartReportHandler(SqsClient sqsClient, String queueReportUrl) {
 
         this.sqsClient = sqsClient;
+        this.queueReportUrl = queueReportUrl;
+
     }
 
     @Override
@@ -44,18 +53,18 @@ public class StartReportHandler implements RequestHandler<APIGatewayProxyRequest
                 return ApiResponseBuilder.createErrorResponse(404, "Email do usuário não encontrado!");
             }
 
-            Map<String, String> messagePayload = new HashMap<>();
-            userIdOpt.ifPresent(id -> messagePayload.put("userId", id));
-            userEmailOpt.ifPresent( email -> messagePayload.put("email", email));
 
-            String requestBody = gson.toJson(messagePayload);
+            ReportRequestDTO requestPayload = new ReportRequestDTO(userIdOpt.get(), userEmailOpt.get());
+
+            String requestBody = gson.toJson(requestPayload);
             sqsClient.sendMessage(SendMessageRequest.builder()
-                            .queueUrl(QUEUE_REPORT)
+                            .queueUrl(queueReportUrl)
                             .messageBody(requestBody)
-                            .delaySeconds(10)
                     .build());
             return ApiResponseBuilder.createSuccessResponse(202, "Sua solicitação foi recebida. Estamos processando-a. Em instantes você receberá em seu e-mail o arquivo .csv");
         } catch (Exception e) {
+            logger.log("Erro no servidor interno: " +  e.getMessage());
+            logger.log("Stace track: " + java.util.Arrays.toString(e.getStackTrace()));
             return ApiResponseBuilder.createErrorResponse(500, "Erro no servidor interno");
         }
     }
