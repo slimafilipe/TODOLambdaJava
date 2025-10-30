@@ -266,7 +266,7 @@ module "ProcessReportLambda" {
   function_name = "process-report-lambda-java"
   handler = "dev.filipe.TODOLambda.controller.queue.ProcessReportHandler::handleRequest"
   runtime = "java21"
-  source_code_path = "./target/TODOLambaJava-1.0-SNAPSHOT.jar"
+  source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
   tasks_table_name = module.todo_table.table_name
   timeout = 300
   enviroment_variables = {
