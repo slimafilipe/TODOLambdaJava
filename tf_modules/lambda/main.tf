@@ -41,9 +41,12 @@ resource "aws_lambda_function" "this" {
   tags = var.tags
 
   environment {
-    variables = {
-      TASKS_TABLE = var.tasks_table_name
-    }
+    variables = merge(
+      {
+        TASKS_TABLE = var.tasks_table_name
+      },
+      var.enviroment_variables
+    )
   }
 
 }

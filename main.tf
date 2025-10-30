@@ -245,6 +245,42 @@ module "GetTaskByIdLambda" {
   }
 }
 
+# ----- Módulo Lambda SQS e SES ---------
+module "StartReportLambda" {
+  source = "./tf_modules/lambda"
+  function_name = "start-report-lambda-java"
+  handler = "dev.filipe.TODOLambdaJava.controller.queue.StartReportHandler::handleRequest"
+  runtime = "java21"
+  source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
+  memory_size = 1024
+  timeout = 60
+  tasks_table_name = module.todo_table.table_name
+  enviroment_variables = {
+    QUEUE_URL = aws_sqs_queue.report_queue.url
+  }
+  tags = { Project = "TODOLambdaJava"}
+}
+
+module "ProcessReportLambda" {
+  source = "./tf_modules/lambda"
+  function_name = "process-report-lambda-java"
+  handler = "dev.filipe.TODOLambda.controller.queue.ProcessReportHandler::handleRequest"
+  runtime = "java21"
+  source_code_path = "./target/TODOLambaJava-1.0-SNAPSHOT.jar"
+  tasks_table_name = module.todo_table.table_name
+  timeout = 300
+  enviroment_variables = {
+    CSV_BUCKET_NAME = aws_s3_bucket.csv_bucket.id
+    SENDER_NAME = aws_ses_email_identity.sender_email.email
+  }
+  tags = { Project = "TODOLambdaJava"}
+}
+resource "aws_lambda_event_source_mapping" "report_queue_trigger" {
+  event_source_arn = aws_sqs_queue.report_queue.arn
+  function_name = module.ProcessReportLambda.lambda_function_arn
+  batch_size = 1
+}
+
 resource "aws_api_gateway_rest_api" "task_api" {
   name = "APITASKS"
   description = "API para Tasks e TaskLists - Atualizado em ${timestamp()}"
@@ -267,6 +303,11 @@ resource "aws_api_gateway_resource" "list_tasks_resource" {
 resource "aws_api_gateway_resource" "list_task_id_resource" {
   parent_id   = aws_api_gateway_resource.list_tasks_resource.id
   path_part   = "{taskId}"
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_resource" "reports_resource" {
+  parent_id   = aws_api_gateway_rest_api.task_api.root_resource_id
+  path_part   = "reports"
   rest_api_id = aws_api_gateway_rest_api.task_api.id
 }
 
@@ -417,6 +458,23 @@ resource "aws_api_gateway_integration" "delete_task_integration" {
   type        = "AWS_PROXY"
   uri         = module.DeleteTaskLambda.lambda_function_invoke_arn
 }
+# --------------
+
+resource "aws_api_gateway_method" "post_report_method" {
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id   = aws_api_gateway_authorizer.cognito_authorizer.id
+  http_method = "POST"
+  resource_id   = aws_api_gateway_resource.reports_resource.id
+  rest_api_id   = aws_api_gateway_rest_api.task_api.id
+}
+resource "aws_api_gateway_integration" "post_report_integration" {
+  http_method = aws_api_gateway_method.post_report_method.http_method
+  integration_http_method = "POST"
+  resource_id = aws_api_gateway_resource.reports_resource.id
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+  type        = "AWS_PROXY"
+  uri         = module.StartReportLambda.lambda_function_invoke_arn
+}
 
 resource "aws_api_gateway_deployment" "api_deployment" {
   rest_api_id = aws_api_gateway_rest_api.task_api.id
@@ -448,6 +506,10 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.delete_task_integration.id,
       aws_api_gateway_method.get_tasks_by_id_method.id,
       aws_api_gateway_integration.get_task_by_id_integration.id,
+
+      aws_api_gateway_resource.reports_resource.id,
+      aws_api_gateway_method.post_report_method.id,
+      aws_api_gateway_integration.post_report_integration.id,
     ]))
   }
   lifecycle {
@@ -583,6 +645,94 @@ resource "aws_iam_role_policy_attachment" "update_lambda_dynamo_acess" {
 resource "aws_iam_role_policy_attachment" "delete_lambda_dynamo_acess" {
   role       = module.DeleteTaskLambda.iam_role_name
   policy_arn = aws_iam_policy.lambda_dynamodb_write_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "start_report_lambda_sqs_acess" {
+  role = module.StartReportLambda.iam_role_name
+  policy_arn = aws_iam_policy.sqs_send_policy.arn
+}
+resource "aws_iam_role_policy_attachment" "process_report_lambda_worker_access" {
+  role = module.ProcessReportLambda.iam_role_name
+  policy_arn = aws_iam_policy.report_worker_policy.arn
+}
+resource "aws_iam_role_policy_attachment" "process_report_lambda_dynamo_access" {
+  role       = module.ProcessReportLambda.iam_role_name
+  policy_arn = aws_iam_policy.lambda_dynamodb_read_policy.arn
+}
+resource "aws_lambda_permission" "allow_api_gateway_start_report" {
+  statement_id = "AllowAPIGatewayInvokeStartReport"
+  action        = "lambda:InvokeFunction"
+  function_name = module.StartReportLambda.lambda_function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn = "${aws_api_gateway_rest_api.task_api.execution_arn}/*/${aws_api_gateway_method.post_report_method.http_method}${aws_api_gateway_resource.reports_resource.path}"
+}
+
+resource "aws_iam_policy" "sqs_send_policy" {
+  name = "lambda-sqs-send-policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "sqs:SendMessage",
+        Resource = aws_sqs_queue.report_queue.arn
+      }
+    ]
+  })
+}
+resource "aws_iam_policy" "report_worker_policy" {
+  name = "lambda-report-worker-policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ],
+        Resource = aws_sqs_queue.report_queue.arn
+      },
+      {
+        Effect = "Allow",
+        Action = "s3:PutObject",
+        Resource = "${aws_s3_bucket.csv_bucket.arn}/*"
+      },
+      {
+        Effect = "Allow",
+        Action = "ses:SendEmail",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+
+resource "aws_sqs_queue" "report_dlq" {
+  name = "report-generation-dlq"
+  tags = {
+    Project = "TODOLambdaJava"
+  }
+}
+resource "aws_sqs_queue" "report_queue" {
+  name = "report-generation-queue"
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.report_dlq.arn
+    maxReceiveCount = 3
+  })
+  tags = {
+    Project = "TODOLambdaJava"
+  }
+}
+resource "aws_s3_bucket" "csv_bucket" {
+  bucket = "todo-lambda-csv-reports-filipe"
+  tags = {
+    Project = "TODOLambdaJava"
+  }
+}
+resource "aws_ses_email_identity" "sender_email" {
+  email = "limafilipe.coding@gmail.com"
 }
 
 

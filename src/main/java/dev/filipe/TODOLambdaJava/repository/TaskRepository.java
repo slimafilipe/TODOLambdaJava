@@ -17,6 +17,20 @@ public class TaskRepository {
         this.taskTable = taskTable;
     }
 
+    public List<Task> getAllUserItems(String userId){
+        String userPartitionKey = Constants.USER_PREFIX + userId;
+
+        QueryConditional conditional = QueryConditional.keyEqualTo(
+                Key.builder()
+                        .partitionValue(userPartitionKey)
+                        .build()
+        );
+        return taskTable.query(conditional)
+                .items()
+                .stream()
+                .collect(Collectors.toList());
+    }
+
     public  List<Task> listTasks(String userId, String listId) {
         String userPK = Constants.USER_PREFIX + userId;
         String taskListSK = Constants.LIST_PREFIX + listId + "#";

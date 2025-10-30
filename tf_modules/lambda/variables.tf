@@ -2,6 +2,11 @@ variable "function_name" {
   description = "Nome da função Lambda"
   type        = string
 }
+variable "enviroment_variables" {
+  description = "Um mapa de variáveis de ambiente adicionais para a função Lambda."
+  type = map(string)
+  default = {}
+}
 
 variable "handler" {
   description = "O handler da função Lambda"
