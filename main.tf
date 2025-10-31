@@ -696,7 +696,7 @@ resource "aws_iam_policy" "report_worker_policy" {
       },
       {
         Effect = "Allow",
-        Action = "s3:PutObject",
+        Action = ["s3:PutObject", "s3:GetObject"]
         Resource = "${aws_s3_bucket.csv_bucket.arn}/*"
       },
       {
