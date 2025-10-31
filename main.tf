@@ -264,7 +264,7 @@ module "StartReportLambda" {
 module "ProcessReportLambda" {
   source = "./tf_modules/lambda"
   function_name = "process-report-lambda-java"
-  handler = "dev.filipe.TODOLambda.controller.queue.ProcessReportHandler::handleRequest"
+  handler = "dev.filipe.TODOLambdaJava.controller.queue.ProcessReportHandler::handleRequest"
   runtime = "java21"
   source_code_path = "./target/TODOLambdaJava-1.0-SNAPSHOT.jar"
   tasks_table_name = module.todo_table.table_name
