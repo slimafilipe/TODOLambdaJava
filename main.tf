@@ -271,7 +271,7 @@ module "ProcessReportLambda" {
   timeout = 300
   enviroment_variables = {
     CSV_BUCKET_NAME = aws_s3_bucket.csv_bucket.id
-    SENDER_NAME = aws_ses_email_identity.sender_email.email
+    SENDER_EMAIL = aws_ses_email_identity.sender_email.email
   }
   tags = { Project = "TODOLambdaJava"}
 }
