@@ -717,6 +717,7 @@ resource "aws_sqs_queue" "report_dlq" {
 }
 resource "aws_sqs_queue" "report_queue" {
   name = "report-generation-queue"
+  visibility_timeout_seconds = 300
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.report_dlq.arn
     maxReceiveCount = 3
