@@ -1,11 +1,3 @@
-Peço mil desculpas pela confusão\! Você tem toda razão. Na minha tentativa de dividir o conteúdo complexo do projeto (código vs. documentação) em várias respostas, acabei deixando a versão final do `README.md` incompleta ou confusa.
-
-Abaixo está o **conteúdo completo e definitivo** para o seu arquivo `README.md`. Ele consolida tudo o que construímos: a arquitetura avançada, o deploy com Terraform, a autenticação e as funcionalidades assíncronas.
-
-Você pode copiar o bloco abaixo inteiro e substituir o conteúdo do seu `README.md` atual.
-
------
-
 # ☁️ Serverless To-Do List API (Java & AWS)
 
 [](https://aws.amazon.com/corretto/)
