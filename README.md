@@ -184,6 +184,3 @@ mvn test
 ## 👨‍💻 Autor
 
 Desenvolvido por [Filipe Lima](https://www.google.com/search?q=https://github.com/slimafilipe).
-
-```
-```
