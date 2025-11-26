@@ -1,145 +1,189 @@
 # ☁️ Serverless To-Do List API (Java & AWS)
 
-[](https://aws.amazon.com/corretto/)
-[](https://www.terraform.io/)
-[](https://aws.amazon.com/)
-[](https://opensource.org/licenses/MIT)
+![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-1.9+-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-Cloud-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 
 Este repositório contém o backend de uma aplicação de gerenciamento de tarefas (To-Do List) totalmente **Serverless**, construída com **Java 21** na AWS.
 
 O projeto demonstra um fluxo de desenvolvimento profissional e uma arquitetura robusta, utilizando **Infraestrutura como Código (IaC)** com Terraform, modelagem **Single-Table Design** no DynamoDB, autenticação segura via **Cognito** e processamento assíncrono com **SQS e SES**.
 
-## 🏗️ Arquitetura
+---
 
-O projeto adota uma arquitetura orientada a eventos e microsserviços (funções Lambda):
+## 🏗️ Arquitetura e Design
 
-\<p align="center"\>
-\<img src="[https://skillicons.dev/icons?i=aws,lambda,apigateway,dynamodb,cognito,sqs,ses,s3,terraform\&theme=light](https://www.google.com/search?q=https://skillicons.dev/icons%3Fi%3Daws,lambda,apigateway,dynamodb,cognito,sqs,ses,s3,terraform%26theme%3Dlight)" alt="Tech Stack Diagram" /\>
-\</p\>
+O sistema foi projetado seguindo os princípios de arquitetura orientada a eventos e microsserviços.
 
-### Componentes Principais
+### Fluxo de Autenticação e API
+1.  O cliente se autentica no **Amazon Cognito** e recebe um Token JWT (`IdToken`).
+2.  O cliente faz requisições ao **API Gateway** enviando o token no cabeçalho.
+3.  O **Cognito Authorizer** valida o token e injeta a identidade do usuário na requisição.
+4.  O API Gateway roteia a requisição para a função **AWS Lambda** específica (padrão *Single Responsibility*).
+5.  A Lambda interage com o **DynamoDB** usando chaves particionadas por usuário (`USER#uuid`) para garantir isolamento e performance.
 
-  * **Compute:** AWS Lambda (Java 21 com Amazon Corretto).
-  * **API:** Amazon API Gateway (REST API com integração Proxy).
-  * **Database:** Amazon DynamoDB (Single-Table Design para Listas e Tarefas).
-  * **Auth:** Amazon Cognito User Pool (JWT Bearer Token).
-  * **Async/Jobs:** Amazon SQS (Fila para processamento de relatórios em background).
-  * **Storage/Mail:** Amazon S3 (Armazenamento de CSVs) e Amazon SES (Envio de e-mails).
-  * **IaC:** Terraform.
-  * **CI/CD:** GitHub Actions.
+### Fluxo Assíncrono (Relatórios)
+Para operações pesadas, utilizamos arquitetura assíncrona para evitar timeouts e melhorar a UX:
+1.  **API Gateway** recebe o pedido de relatório (`POST /reports`).
+2.  **Lambda Gatilho** valida o usuário e envia uma mensagem para uma fila **SQS**.
+3.  A API responde imediatamente ao usuário (`202 Accepted`).
+4.  **Lambda Trabalhadora** (acionada pelo SQS) processa a mensagem em segundo plano:
+    * Busca todos os dados do usuário no DynamoDB.
+    * Gera um arquivo CSV hierárquico.
+    * Faz upload do CSV para um bucket **S3**.
+    * Gera uma **URL pré-assinada** (segura e temporária).
+    * Envia um e-mail para o usuário via **Amazon SES** contendo o link de download.
 
 ## 🚀 Funcionalidades
 
-✅ **Funcionalidades Atuais:**
+### ✅ Gestão de Tarefas e Listas
+- **Listas:** Criar, Listar e Deletar listas de tarefas.
+- **Tarefas:** CRUD completo para tarefas dentro de listas específicas.
+- **Hierarquia:** As tarefas são estritamente vinculadas a uma lista e a um usuário.
 
-  * [x] **Autenticação Completa:** Cadastro de usuário, confirmação por código (e-mail) e login (retorna JWT).
-  * [x] **Segurança:** API protegida por autorizador Cognito. Suporte a CORS habilitado.
-  * [x] **Gestão de Listas:** CRUD completo para listas de tarefas.
-  * [x] **Gestão de Tarefas:** CRUD completo para tarefas dentro de listas, usando chaves compostas (PK/SK) no DynamoDB.
-  * [x] **Performance:** Modelagem Single-Table Design otimizada para queries rápidas por usuário.
-  * [x] **Processamento Assíncrono:** Geração de relatórios pesados (CSV com todas as tarefas do usuário) feita em background via SQS + Lambda Worker, evitando timeouts na API.
-  * [x] **Notificações:** Envio do link de download do relatório por e-mail via SES.
-  * [x] **Infraestrutura Automatizada:** 100% dos recursos AWS provisionados via Terraform.
+### 🔐 Segurança
+- **Autenticação:** Cadastro, Confirmação e Login (SRP/Senha) via Cognito User Pools.
+- **Autorização:** Todas as rotas protegidas por validação de Token JWT.
+- **Dados:** Isolamento lógico de dados por usuário no banco de dados.
 
-🔜 **Roadmap Futuro:**
+### ⚡ Performance & Dados
+- **Single-Table Design:** Utilização de uma única tabela DynamoDB com chaves compostas (PK/SK) para otimizar custos e permitir queries complexas (ex: buscar lista e tarefas em uma única chamada, se necessário).
+- **Modelagem:**
+    - `PK`: `USER#{userId}`
+    - `SK` (Lista): `LIST#{listId}`
+    - `SK` (Tarefa): `LIST#{listId}#TASK#{taskId}`
 
-  * [ ] Implementar testes de integração (E2E) rodando no pipeline de CI.
-  * [ ] Adicionar dashboards avançados no CloudWatch e rastreamento com X-Ray.
-  * [ ] Implementar WebSockets no API Gateway para atualizações em tempo real no frontend.
+---
 
-## 🛠️ Pré-requisitos
+## 🛠️ Tecnologias Utilizadas
 
-Antes de começar, garanta que você tenha as seguintes ferramentas instaladas e configuradas:
+* **Linguagem:** Java 21 (Amazon Corretto)
+* **Build:** Apache Maven
+* **Cloud:** AWS (Lambda, API Gateway, DynamoDB, Cognito, SQS, S3, SES)
+* **IaC:** Terraform (Modularizado)
+* **CI/CD:** GitHub Actions (Pipeline de Build, Testes Unitários e Planejamento de Infraestrutura)
+* **Testes:** JUnit 5 & Mockito
+* **Bibliotecas:**
+    - `aws-lambda-java-events`: Tipagem de eventos AWS.
+    - `aws-sdk-java-v2`: SDK oficial da AWS (Modular).
+    - `dynamodb-enhanced`: Mapeamento de objetos para DynamoDB.
+    - `gson`: Serialização JSON.
+    - `opencsv`: Geração de arquivos CSV.
 
-  * [Java 21 (Amazon Corretto)](https://aws.amazon.com/corretto/)
-  * [Apache Maven](https://maven.apache.org/download.cgi)
-  * [Terraform CLI](https://developer.hashicorp.com/terraform/install)
-  * [AWS CLI](https://aws.amazon.com/cli/) (Configurado com credenciais de administrador: `aws configure`)
+---
 
-## 📦 Instalação e Deploy
+## 📦 Como Rodar o Projeto
 
-### 1\. Clone o repositório
+### Pré-requisitos
+* [Java 21 JDK](https://aws.amazon.com/corretto/)
+* [Apache Maven](https://maven.apache.org/download.cgi)
+* [Terraform CLI](https://developer.hashicorp.com/terraform/install)
+* [AWS CLI](https://aws.amazon.com/cli/) configurado com credenciais.
 
+### 1. Clone o repositório
 ```bash
-git clone https://github.com/slimafilipe/TODOLambdaJava.git
+git clone [https://github.com/slimafilipe/TODOLambdaJava.git](https://github.com/slimafilipe/TODOLambdaJava.git)
 cd TODOLambdaJava
-git checkout dev
-```
+````
 
-### 2\. Build da Aplicação Java
+### 2\. Build da Aplicação
 
-Compile o projeto e gere o pacote `.jar` que será enviado para as Lambdas.
+Compile o projeto e gere o pacote `.jar` (Uber-jar) para as Lambdas.
 
 ```bash
 mvn clean package
 ```
 
-*O sucesso deste passo gera o arquivo `target/todo-lambda-java-1.0-SNAPSHOT.jar`.*
-
-### 3\. Provisionar Infraestrutura (Terraform)
-
-O deploy é totalmente automatizado pelo Terraform.
+### 3\. Deploy da Infraestrutura (Terraform)
 
 ```bash
-# 1. Inicialize o Terraform (baixa plugins necessários)
+# Inicialize o Terraform
 terraform init
 
-# 2. Visualize o plano de execução (opcional, mas recomendado)
+# Visualize o plano
 terraform plan
 
-# 3. Aplique a infraestrutura na AWS
+# Aplique a infraestrutura
 terraform apply
 ```
 
-*Confirme a execução digitando `yes` quando solicitado.*
+*Confirme com `yes` quando solicitado.*
 
-> **Saídas do Terraform:** Ao final do comando `apply`, o Terraform exibirá informações cruciais como a URL base da API (`api_invoke_url`) e os IDs do Cognito. Anote-os para usar no frontend ou nos testes.
+> **⚠️ Importante sobre o SES:** Após o deploy, a AWS enviará um e-mail de verificação para o endereço definido como remetente. Você deve confirmar esse e-mail para que o envio de relatórios funcione (enquanto estiver na Sandbox do SES).
 
-## 🧪 Rodando os Testes
+-----
 
-O projeto utiliza **JUnit 5** e **Mockito** para testes unitários, focando na lógica de negócios e na camada de controle (Handlers) de forma isolada da nuvem.
+## 🔌 Documentação da API
+
+**Base URL:** Disponível no output do Terraform como `api_invoke_url`.
+**Auth:** Header `Authorization: Bearer {IdToken}` obrigatório em todas as rotas.
+
+### 📂 Listas (TaskLists)
+
+| Método | Rota | Descrição |
+| :--- | :--- | :--- |
+| **POST** | `/lists` | Cria uma nova lista. Body: `{ "listName": "..." }` |
+| **GET** | `/lists` | Retorna todas as listas do usuário. |
+| **GET** | `/lists/{listId}` | Retorna uma lista específica pelo ID. |
+| **DELETE** | `/lists/{listId}` | Deleta uma lista e todas as suas tarefas. |
+
+### ✅ Tarefas (Tasks)
+
+| Método | Rota | Descrição |
+| :--- | :--- | :--- |
+| **POST** | `/lists/{listId}/tasks` | Cria tarefa na lista. Body: `{ "title": "...", "description": "..." }` |
+| **GET** | `/lists/{listId}/tasks` | Lista todas as tarefas de uma lista específica. |
+| **GET** | `/lists/{listId}/tasks/{taskId}` | Busca uma tarefa específica por ID. |
+| **PUT** | `/lists/{listId}/tasks/{taskId}` | Atualiza uma tarefa. Body: `{ "title": "...", "completed": true }` |
+| **DELETE** | `/lists/{listId}/tasks/{taskId}` | Deleta uma tarefa. |
+
+### 📊 Relatórios
+
+| Método | Rota | Descrição |
+| :--- | :--- | :--- |
+| **POST** | `/reports` | Inicia a geração assíncrona do relatório CSV e envio por e-mail. |
+
+-----
+
+## 🧪 Testes
+
+O projeto possui uma suíte de testes unitários cobrindo os Handlers e a lógica de negócio, utilizando Mocks para isolar a dependência da nuvem.
+
+Para rodar os testes:
 
 ```bash
 mvn test
 ```
 
-## 🔌 Documentação da API (Endpoints Principais)
+-----
 
-**Base URL:** `https://{api_id}.execute-api.{region}.amazonaws.com/v2`
-**Auth:** Todas as rotas (exceto cadastro/login) requerem header `Authorization: Bearer {id_token}`.
+## 📂 Estrutura de Pastas
 
-| Recurso | Método | Rota | Descrição |
-| :--- | :--- | :--- | :--- |
-| **Listas** | GET | `/lists` | Retorna todas as listas do usuário. |
-| | POST | `/lists` | Cria uma nova lista. |
-| | DELETE | `/lists/{listId}` | Deleta uma lista e suas tarefas. |
-| **Tarefas** | GET | `/lists/{listId}/tasks` | Retorna tarefas de uma lista. |
-| | POST | `/lists/{listId}/tasks` | Cria uma tarefa na lista. |
-| | PUT | `/lists/{listId}/tasks/{taskId}`| Atualiza uma tarefa (ex: marcar como concluída). |
-| | DELETE | `/lists/{listId}/tasks/{taskId}`| Deleta uma tarefa. |
-| **Relatórios**| POST | `/reports` | Solicita a geração assíncrona do relatório CSV. |
-
-## 📂 Estrutura do Projeto
-
-```
+```text
 /
-├── .github/workflows/   # Pipelines de CI/CD (GitHub Actions)
+├── .github/workflows/    # Pipelines de CI/CD
 ├── src/
 │   ├── main/java/dev/filipe/TODOLambdaJava/
-│   │   ├── config/      # Injeção de dependências (Clientes AWS)
-│   │   ├── controller/  # Handlers Lambda (Pontos de entrada da API e SQS)
-│   │   ├── dto/         # Objetos de Transferência de Dados (Records)
-│   │   ├── model/       # Entidades do DynamoDB
-│   │   ├── repository/  # Camada de acesso a dados (DynamoDB Enhanced Client)
-│   │   └── util/        # Utilitários (Auth, Respostas API, Mappers)
-│   └── test/            # Testes Unitários com JUnit/Mockito
-├── tf_modules/          # Módulos Terraform reutilizáveis
-├── main.tf              # Arquivo principal da infraestrutura Terraform
-└── pom.xml              # Gerenciamento de dependências Maven
+│   │   ├── config/       # Dependency Injection (Singleton Factory)
+│   │   ├── controller/   # Lambda Handlers (Entrada da API)
+│   │   │   ├── task/     # Handlers de Tarefas
+│   │   │   ├── taskList/ # Handlers de Listas
+│   │   │   └── queue/    # Handlers de SQS (Relatórios)
+│   │   ├── dto/          # Data Transfer Objects (Records)
+│   │   ├── model/        # Entidades do DynamoDB
+│   │   ├── repository/   # Acesso a dados (DynamoDB Enhanced)
+│   │   └── util/         # Utilitários (Auth, API Response, Mappers)
+│   └── test/             # Testes Unitários
+├── tf_modules/           # Módulos Terraform (Lambda, DynamoDB)
+├── main.tf               # Definição da Infraestrutura Principal
+└── pom.xml               # Dependências Maven
 ```
 
-## Stacks
+-----
 
-\<div align="center"\>
-\<img src="[https://skillicons.dev/icons?i=java,maven,aws,terraform,githubactions,dynamodb,lambda,apigateway,sqs,ses\&theme=light\&perline=10](https://www.google.com/search?q=https://skillicons.dev/icons%3Fi%3Djava,maven,aws,terraform,githubactions,dynamodb,lambda,apigateway,sqs,ses%26theme%3Dlight%26perline%3D10)" /\>
-\</div\>
+## 👨‍💻 Autor
+
+Desenvolvido por [Filipe Lima](https://www.google.com/search?q=https://github.com/slimafilipe).
+
+```
+```
